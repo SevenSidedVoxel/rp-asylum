@@ -1,15 +1,16 @@
 {
-  "name": "rp-asylum",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "scripts": {
-    "build": "bun build --compile --target=browser --minify ./src/index.html --outdir=dist"
-  }
+	"name": "rp-asylum",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"dev": "bun run dev.ts",
+		"build": "bun build ./src/index.html --outdir=dist --minify"
+	}
 }
