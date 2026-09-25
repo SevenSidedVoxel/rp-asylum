@@ -11,6 +11,6 @@
 	},
 	"scripts": {
 		"dev": "bun run dev.ts",
-		"build": "bun build ./src/index.html --outdir=dist --minify"
+		"build": "bun build ./src/index.html --outdir=dist --minify --entry-naming \"[name].[ext]\" --chunk-naming \"[name].[ext]\""
 	}
 }

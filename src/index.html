@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Asylum Monitoring System</title>
+	<title>RP Asylum</title>
 
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,96 +12,13 @@
 	<link href="https://fonts.googleapis.com/css2?family=DM+Serital&family=DM+Serif+Display:ital@0;1&display=swap"
 		rel="stylesheet">
 
-	<style>
-		:root {
-			--col-bg-dark: #0d0c0a;
-			--col-bg-panel: #151618;
-			--col-text-header: #b2b3c4;
-			--col-text-accent: #b7a5a3;
-			--col-text-default: #778da6;
-			--col-text-muted: #425464;
-			--col-text-good: #57a83b;
-			--col-text-bad: #9e3925;
-
-			color: var(--col-text-default);
-
-			--font-heading: 'Playfair Display SC', serif;
-			--font-body: 'DM Serif Display', serif;
-			font-family: var(--font-body);
-		}
-
-		body {
-			/* Make the body fill the entire screen height */
-			height: 100vh;
-			margin: 0;
-
-			/* Turn on Flexbox and center content both ways */
-			display: flex;
-			justify-content: center;
-			align-items: center;
-
-			/* Slate background */
-			background-color: var(--col-bg-dark);
-		}
-
-		.center-box {
-			width: 300px;
-			padding: 24px;
-			background-color: var(--col-bg-panel);
-			border-radius: 8px;
-			box-shadow: 0 6px 6px rgba(0, 0, 0, 0.5);
-		}
-
-		.accent {
-			color: var(--col-text-accent);
-		}
-
-		.default {
-			color: var(--col-text-default);
-		}
-
-		.mute {
-			color: var(--col-text-muted);
-		}
-
-		.good {
-			color: var(--col-text-good);
-		}
-
-		.bad {
-			color: var(--col-text-bad);
-		}
-
-		h2,
-		.head {
-			color: var(--col-text-header);
-			font-family: var(--font-heading);
-			font-weight: 800;
-			font-size: 2rem;
-			text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-		}
-	</style>
+	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-	<div class="center-box">
-		<h2>Centered Box</h2>
-		<p>
-			Text will normally look like this, unless you should really
-			<span class="accent">
-				pay attention
-			</span>
-			or unless the contents are
-			<span class="mute">
-				not very important.
-			</span>
-		</p>
-		<p>
-			Text may also highlight <span class="good">good effects</span> and <span class="bad">bad effects</span>.
-		</p>
+	<div id="content-root">
+		<!-- Content will be injected here -->
 	</div>
-
-	<div id="app"></div>
 
 	<script type="module" src="./script.ts"></script>
 </body>

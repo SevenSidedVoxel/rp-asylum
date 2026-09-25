@@ -12,6 +12,11 @@ async function buildProject() {
         entrypoints: [`${SRC_DIR}/index.html`],
         outdir: DIST_DIR,
         minify: false,
+        naming: {
+            entry: "[name].[ext]",
+            chunk: "[name].[ext]",
+            asset: "[dir]/[name].[ext]",
+        }
     });
 
     if (!result.success) {
@@ -81,7 +86,7 @@ const server = serve({
     websocket: {
         open(ws) { reloadClients.add(ws); },
         close(ws) { reloadClients.delete(ws); },
-        message() {},
+        message() { },
     }
 });
 
