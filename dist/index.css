@@ -1,4 +1,26 @@
-/* src/style.css */
+/* src/styles/menu.css */
+.menu-ctr {
+  background-color: var(--col-bg-panel);
+  border-radius: 8px;
+  padding: 20px 40px 40px;
+}
+
+.menu-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 5px;
+  padding: 0 20px;
+}
+
+/* src/styles/colors.css */
 :root {
   --col-good: #57a83b;
   --col-bad: #9e3925;
@@ -19,6 +41,84 @@
   --col-bg-btn-hover: color-mix(in srgb, var(--col-bg-btn) 90%, white);
   --font-heading: "Playfair Display SC", serif;
   --font-body: "DM Serif Display", serif;
+}
+
+/* src/styles/game.css */
+:root {
+  --col-tile-light: #272e3b;
+  --col-tile-dark: #1d222b;
+  --col-tile-border: #1d2831;
+  --col-tile-highlight: #1d2831;
+  --col-tile-highlight2: #204c45;
+  --border-width: 2px;
+  --grid-size: 8;
+}
+
+.game-board {
+  aspect-ratio: 1;
+  background-color: var(--col-bg-panel);
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  grid-template-rows: repeat(var(--grid-size), 1fr);
+  border-radius: 8px;
+  width: calc(min(100vw, 100dvh) - 80px);
+  padding: 20px;
+}
+
+.tile {
+  display: flex;
+  position: relative;
+  aspect-ratio: 1;
+  z-index: 1;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: border-color .1s, background-color .1s;
+}
+
+.tile-a {
+  background-color: var(--col-tile-light);
+  border: var(--border-width) solid var(--col-tile-light);
+}
+
+.tile-b {
+  background-color: var(--col-tile-dark);
+  border: var(--border-width) solid var(--col-tile-dark);
+}
+
+.tile.highlight-col {
+  filter: brightness(1.1);
+  border-left: var(--border-width) solid var(--col-tile-highlight);
+  border-right: var(--border-width) solid var(--col-tile-highlight);
+  z-index: 10;
+}
+
+.tile.highlight-row {
+  filter: brightness(1.1);
+  border-top: var(--border-width) solid var(--col-tile-highlight);
+  border-bottom: var(--border-width) solid var(--col-tile-highlight);
+  z-index: 10;
+}
+
+.tile.highlight {
+  z-index: 100;
+}
+
+.tile.highlight:after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  background-color: inherit;
+  border: var(--border-width) solid var(--col-tile-highlight2);
+  inset: -2px;
+}
+
+.tile.linger {
+  filter: saturate(3);
+}
+
+/* src/style.css */
+:root {
   color: var(--col-text-default);
   font-family: var(--font-body);
 }

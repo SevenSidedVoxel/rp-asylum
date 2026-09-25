@@ -1,8 +1,9 @@
-import { RootCtx } from "./views";
-import { HomeView } from "./views/home";
+import { AppCtx } from "./AppCtx";
+import { GameView } from "./views/GameView";
+import { MainMenuView } from "./views/MainMenuView";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "amoeba";
+export const BuildID = "barycentric";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Display version number
@@ -11,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Setup root & view
 	const root = document.getElementById("content-root");
-	var rootCtx = new RootCtx(root);
-	rootCtx.changeView(new HomeView());
+	var ctx = new AppCtx(root);
+	// ctx.changeView(new MainMenuView(ctx));
+	ctx.changeView(new GameView(ctx));
 });

@@ -1,0 +1,27 @@
+@import "./colors.css";
+
+.menu-ctr {
+	background-color: var(--col-bg-panel);
+
+	padding: 40px;
+	padding-top: 20px;
+	border-radius: 8px;
+}
+
+.menu-vertical {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+
+	/*align-items: center;
+	justify-content: center; */
+}
+
+.menu-actions {
+	padding: 0px 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: center;
+	gap: 5px;
+}

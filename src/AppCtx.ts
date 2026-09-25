@@ -1,9 +1,9 @@
 export interface IView {
-	enter(ctx: RootCtx): void;
-	exit(ctx: RootCtx): void;
+	enter(ctx: AppCtx): void;
+	exit(ctx: AppCtx): void;
 }
 
-export class RootCtx {
+export class AppCtx {
 	public root: HTMLElement;
 	public currView: IView | null = null;
 
@@ -15,5 +15,9 @@ export class RootCtx {
 		this.currView?.exit(this);
 		this.currView = view;
 		this.currView?.enter(this);
+	}
+
+	public addClickHandler(id: string, handler: EventListenerOrEventListenerObject) {
+		this.root.querySelector(`#${id}`)?.addEventListener('click', handler);
 	}
 }

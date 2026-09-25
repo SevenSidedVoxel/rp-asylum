@@ -1,8 +1,8 @@
-import { IView, RootCtx } from "../views";
+import { IView, AppCtx } from "../AppCtx";
 
 export class HomeView implements IView {
-	enter(ctx: RootCtx): void {
-		ctx.root.innerHTML = /*html*/ `
+	enter(ctx: AppCtx): void {
+		ctx.root.innerHTML = /*html*/`
 <div class="sections-ctr">
 	<section class="sections-item">
 		<h2>Join</h2>
