@@ -45,7 +45,11 @@ class HomeView {
 }
 
 // src/script.ts
+var BuildTimestamp = "v20260924_230116";
+var BuildID = "chipmunk";
 document.addEventListener("DOMContentLoaded", () => {
+  const footer = document.getElementById("version");
+  footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;
   const root = document.getElementById("content-root");
   var rootCtx = new ViewCtx(root);
   rootCtx.changeView(new HomeView);

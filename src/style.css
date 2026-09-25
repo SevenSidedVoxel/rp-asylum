@@ -37,7 +37,8 @@
 	font-family: var(--font-body);
 }
 
-html, body {
+html,
+body {
 	background-color: var(--col-bg-dark);
 
 	/* Fullscreen, No Scrolling */
@@ -48,16 +49,28 @@ html, body {
 	position: fixed;
 }
 
+#version {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	padding: 10px;
+
+	color: var(--col-text-muted);
+	opacity: 50%;
+	text-align: center;
+}
+
 #content-root {
 	height: 100vh;
 
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: 10px;
-	flex-wrap: wrap;
+	gap: 30px;
 
-	flex-direction: column;
+
 	@media (min-width: 768px) and (orientation: landscape) {
 		flex-direction: row;
 	}
@@ -65,9 +78,10 @@ html, body {
 
 .content-box {
 	flex: 1;
-	aspect-ratio: 1 / 1;
+	max-width: 500px;
+	max-height: 500px;
+	aspect-ratio: 1/1;
 
-	width: 300px;
 	padding: 32px;
 	background-color: var(--col-bg-panel);
 	border-radius: 8px;

@@ -23,21 +23,36 @@
   font-family: var(--font-body);
 }
 
-body {
+html, body {
   background-color: var(--col-bg-dark);
+  overflow: hidden;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
   margin: 0;
+}
+
+#version {
+  position: fixed;
+  color: var(--col-text-muted);
+  opacity: .5;
+  text-align: center;
+  width: 100%;
+  padding: 10px;
+  bottom: 0;
+  left: 0;
 }
 
 #content-root {
   display: flex;
-  flex-flow: column wrap;
+  flex-direction: column;
   justify-content: center;
   align-items:  center;
-  gap: 10px;
+  gap: 30px;
   height: 100vh;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (orientation: landscape) {
   #content-root {
     flex-direction: row;
   }
@@ -52,7 +67,8 @@ body {
   border-radius: 8px;
   flex-direction: column;
   flex: 1;
-  width: 300px;
+  max-width: 500px;
+  max-height: 500px;
   padding: 32px;
 }
 

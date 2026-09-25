@@ -1,4 +1,4 @@
-import { serve } from "bun";
+import { build, serve } from "bun";
 import { watch } from "fs";
 import { join } from "path";
 
@@ -8,23 +8,41 @@ const SRC_DIR = "./src";
 
 // 1. Build function
 async function buildProject() {
-    const result = await Bun.build({
-        entrypoints: [`${SRC_DIR}/index.html`],
-        outdir: DIST_DIR,
-        minify: false,
-        naming: {
-            entry: "[name].[ext]",
-            chunk: "[name].[ext]",
-            asset: "[dir]/[name].[ext]",
-        }
-    });
+	let buildStamp;
+	{
+		const d = new Date();
 
-    if (!result.success) {
-        console.error("❌ Build failed:");
-        for (const msg of result.logs) console.error(msg);
-    } else {
-        console.log(`✨ Recompiled into ${DIST_DIR} at ${new Date().toLocaleTimeString()}`);
-    }
+		const Y = d.getFullYear();
+		const M = String(d.getMonth() + 1).padStart(2, '0');
+		const D = String(d.getDate()).padStart(2, '0');
+		const h = String(d.getHours()).padStart(2, '0');
+		const m = String(d.getMinutes()).padStart(2, '0');
+		const s = String(d.getSeconds()).padStart(2, '0');
+
+		// Custom layout: YYYY-MM-DD HH:mm
+		buildStamp = `"v${Y}${M}${D}_${h}${m}${s}"`;
+	}
+
+	const result = await Bun.build({
+		entrypoints: [`${SRC_DIR}/index.html`],
+		outdir: DIST_DIR,
+		minify: false,
+		naming: {
+			entry: "[name].[ext]",
+			chunk: "[name].[ext]",
+			asset: "[dir]/[name].[ext]",
+		},
+		define: {
+			__BUILD_TIMESTAMP__: buildStamp,
+		}
+	});
+
+	if (!result.success) {
+		console.error("❌ Build failed:");
+		for (const msg of result.logs) console.error(msg);
+	} else {
+		console.log(`✨ Recompiled into ${DIST_DIR} at ${new Date().toLocaleTimeString()}`);
+	}
 }
 
 // Run initial build
@@ -34,60 +52,60 @@ await buildProject();
 let reloadClients: Set<ServerWebSocket> = new Set();
 
 watch(SRC_DIR, { recursive: true }, async () => {
-    await buildProject();
-    // Notify all connected browser clients to refresh
-    for (const client of reloadClients) {
-        client.send("reload");
-    }
+	await buildProject();
+	// Notify all connected browser clients to refresh
+	for (const client of reloadClients) {
+		client.send("reload");
+	}
 });
 
 // 3. Serve dist/ with an injected Live-Reload client script
 const server = serve({
-    port: PORT,
-    async fetch(req, server) {
-        const url = new URL(req.url);
+	port: PORT,
+	async fetch(req, server) {
+		const url = new URL(req.url);
 
-        // Handle live-reload websocket handshake
-        if (url.pathname === "/__live_reload") {
-            const upgraded = server.upgrade(req);
-            if (upgraded) return;
-        }
+		// Handle live-reload websocket handshake
+		if (url.pathname === "/__live_reload") {
+			const upgraded = server.upgrade(req);
+			if (upgraded) return;
+		}
 
-        let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
-        let file = Bun.file(join(DIST_DIR, filePath));
+		let filePath = url.pathname === "/" ? "/index.html" : url.pathname;
+		let file = Bun.file(join(DIST_DIR, filePath));
 
-        if (!(await file.exists())) {
-            file = Bun.file(join(DIST_DIR, "index.html")); // SPA fallback
-        }
+		if (!(await file.exists())) {
+			file = Bun.file(join(DIST_DIR, "index.html")); // SPA fallback
+		}
 
-        if (await file.exists()) {
-            let content = await file.text();
+		if (await file.exists()) {
+			let content = await file.text();
 
-            // If it's an HTML file, inject the auto-reload script automatically
-            if (file.type.includes("html") || url.pathname.endsWith(".html") || url.pathname === "/") {
-                const injection = `
-                    <script>
-                        const ws = new WebSocket("ws://" + location.host + "/__live_reload");
-                        ws.onmessage = (event) => {
-                            if (event.data === "reload") location.reload();
-                        };
-                    </script>
-                `;
-                content = content.replace("</body>", injection + "</body>");
-            }
+			// If it's an HTML file, inject the auto-reload script automatically
+			if (file.type.includes("html") || url.pathname.endsWith(".html") || url.pathname === "/") {
+				const injection = `
+					<script>
+						const ws = new WebSocket("ws://" + location.host + "/__live_reload");
+						ws.onmessage = (event) => {
+							if (event.data === "reload") location.reload();
+						};
+					</script>
+				`;
+				content = content.replace("</body>", injection + "</body>");
+			}
 
-            return new Response(content, {
-                headers: { "Content-Type": file.type || "text/html" }
-            });
-        }
+			return new Response(content, {
+				headers: { "Content-Type": file.type || "text/html" }
+			});
+		}
 
-        return new Response("Not Found", { status: 404 });
-    },
-    websocket: {
-        open(ws) { reloadClients.add(ws); },
-        close(ws) { reloadClients.delete(ws); },
-        message() { },
-    }
+		return new Response("Not Found", { status: 404 });
+	},
+	websocket: {
+		open(ws) { reloadClients.add(ws); },
+		close(ws) { reloadClients.delete(ws); },
+		message() { },
+	}
 });
 
 console.log(`\n🚀 Asylum Tracker running at http://localhost:${PORT}`);
