@@ -47,8 +47,8 @@ class HomeView {
 }
 
 // src/script.ts
-var BuildTimestamp = "v20260925_011957";
-var BuildID = "ant";
+var BuildTimestamp = "v20260925_100646";
+var BuildID = "amoeba";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;

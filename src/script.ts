@@ -2,7 +2,7 @@ import { RootCtx } from "./views";
 import { HomeView } from "./views/home";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "ant";
+export const BuildID = "amoeba";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Display version number
