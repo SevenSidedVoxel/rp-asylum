@@ -1,5 +1,5 @@
 // src/views.ts
-class ViewCtx {
+class RootCtx {
   root;
   currView = null;
   constructor(root) {
@@ -16,41 +16,43 @@ class ViewCtx {
 class HomeView {
   enter(ctx) {
     ctx.root.innerHTML = `
-		<section class="content-box">
-			<h2>Inmate Intake</h2>
+<div class="sections-ctr">
+	<section class="sections-item">
+		<h2>Join</h2>
 
-			<p>Enter Asylum Code:</p>
-			<div class="input-group">
-				<input id="player-input-box" class="input" placeholder="Enter Asylum ID here..."></input>
-			</div>
+		<p>Enter Join Code:</p>
+		<div class="input-group">
+			<input id="input-join-code" class="input" placeholder="Enter code here..." />
+		</div>
 
-			<div class="content-box-footer">
-				<button class="btn" style="margin-top: 20px;">Enter the Asylum</button>
-			</div>
-		</section>
+		<div class="content-box-footer">
+			<button class="btn" style="margin-top: 20px;">Join</button>
+		</div>
+	</section>
 
-		<section class="content-box">
-			<h2>Warden System</h2>
-			<p>
-				One computer is required to run the Asylum Warden System.
-			</p>
+	<section class="sections-item">
+		<h2>Host</h2>
+		<p>
+			Only one player needs to host the game
+		</p>
 
-			<div class="content-box-footer">
-				<button class="btn" style="margin-top: 20px;">Initialize New Warden</button>
-			</div>
-		</section>
+		<div class="content-box-footer">
+			<button class="btn" style="margin-top: 20px;">Host</button>
+		</div>
+	</section>
+</div>
 		`;
   }
   exit(ctx) {}
 }
 
 // src/script.ts
-var BuildTimestamp = "v20260924_230116";
-var BuildID = "chipmunk";
+var BuildTimestamp = "v20260925_005924";
+var BuildID = "beaver";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;
   const root = document.getElementById("content-root");
-  var rootCtx = new ViewCtx(root);
+  var rootCtx = new RootCtx(root);
   rootCtx.changeView(new HomeView);
 });

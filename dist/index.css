@@ -45,30 +45,40 @@ html, body {
 
 #content-root {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items:  center;
-  gap: 30px;
+  width: 100vw;
   height: 100vh;
 }
 
-@media (min-width: 768px) and (orientation: landscape) {
-  #content-root {
-    flex-direction: row;
+.sections-ctr {
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+  align-items:  center;
+  gap: 30px;
+  width: 100vw;
+  margin: 50px;
+}
+
+@media (orientation: portrait) {
+  .sections-ctr {
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    width: calc(min(100vw, 50vh - 40px));
   }
 }
 
-.content-box {
+.sections-item {
   aspect-ratio: 1;
   background-color: var(--col-bg-panel);
   box-shadow: 0 6px 6px var(--col-shadow);
   display: flex;
-  justify-content: baseline;
   border-radius: 8px;
   flex-direction: column;
   flex: 1;
-  max-width: 500px;
-  max-height: 500px;
+  justify-content: flex-start;
   padding: 32px;
 }
 

@@ -1,31 +1,33 @@
-import { IView, ViewCtx } from "../views";
+import { IView, RootCtx } from "../views";
 
 export class HomeView implements IView {
-	enter(ctx: ViewCtx): void {
+	enter(ctx: RootCtx): void {
 		ctx.root.innerHTML = /*html*/ `
-		<section class="content-box">
-			<h2>Inmate Intake</h2>
+<div class="sections-ctr">
+	<section class="sections-item">
+		<h2>Join</h2>
 
-			<p>Enter Asylum Code:</p>
-			<div class="input-group">
-				<input id="player-input-box" class="input" placeholder="Enter Asylum ID here..."></input>
-			</div>
+		<p>Enter Join Code:</p>
+		<div class="input-group">
+			<input id="input-join-code" class="input" placeholder="Enter code here..." />
+		</div>
 
-			<div class="content-box-footer">
-				<button class="btn" style="margin-top: 20px;">Enter the Asylum</button>
-			</div>
-		</section>
+		<div class="content-box-footer">
+			<button class="btn" style="margin-top: 20px;">Join</button>
+		</div>
+	</section>
 
-		<section class="content-box">
-			<h2>Warden System</h2>
-			<p>
-				One computer is required to run the Asylum Warden System.
-			</p>
+	<section class="sections-item">
+		<h2>Host</h2>
+		<p>
+			Only one player needs to host the game
+		</p>
 
-			<div class="content-box-footer">
-				<button class="btn" style="margin-top: 20px;">Initialize New Warden</button>
-			</div>
-		</section>
+		<div class="content-box-footer">
+			<button class="btn" style="margin-top: 20px;">Host</button>
+		</div>
+	</section>
+</div>
 		`;
 	}
 

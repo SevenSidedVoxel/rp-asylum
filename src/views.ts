@@ -1,9 +1,9 @@
 export interface IView {
-	enter(ctx: ViewCtx): void;
-	exit(ctx: ViewCtx): void;
+	enter(ctx: RootCtx): void;
+	exit(ctx: RootCtx): void;
 }
 
-export class ViewCtx {
+export class RootCtx {
 	public root: HTMLElement;
 	public currView: IView | null = null;
 

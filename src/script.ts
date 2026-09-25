@@ -1,8 +1,8 @@
-import { ViewCtx } from "./views";
+import { RootCtx } from "./views";
 import { HomeView } from "./views/home";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "chipmunk";
+export const BuildID = "beaver";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Display version number
@@ -11,6 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Setup root & view
 	const root = document.getElementById("content-root");
-	var rootCtx = new ViewCtx(root);
+	var rootCtx = new RootCtx(root);
 	rootCtx.changeView(new HomeView());
 });

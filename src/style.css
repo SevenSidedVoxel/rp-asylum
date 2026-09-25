@@ -62,25 +62,38 @@ body {
 }
 
 #content-root {
+	width: 100vw;
 	height: 100vh;
 
 	display: flex;
-	flex-direction: column;
-	justify-content: center;
 	align-items: center;
+	justify-content: center;
+}
+
+.sections-ctr {
+	display: flex;
 	gap: 30px;
 
+	flex-direction: row;
+	align-items: center;
+	justify-content: stretch;
+	width: 100vw;
+	margin: 50px;
 
-	@media (min-width: 768px) and (orientation: landscape) {
-		flex-direction: row;
+	@media (orientation: portrait) {
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: center;
+
+		width: calc(min(100vw, (100vh - 80px) / 2));
 	}
 }
 
-.content-box {
+.sections-item {
 	flex: 1;
-	max-width: 500px;
-	max-height: 500px;
-	aspect-ratio: 1/1;
+	aspect-ratio: 1 / 1;
+
+	@media (orientation: portrait) {}
 
 	padding: 32px;
 	background-color: var(--col-bg-panel);
@@ -89,7 +102,7 @@ body {
 
 	display: flex;
 	flex-direction: column;
-	justify-content: baseline;
+	justify-content: flex-start;
 }
 
 .content-box-footer {
