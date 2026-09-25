@@ -37,7 +37,7 @@
 	font-family: var(--font-body);
 }
 
-body {
+html, body {
 	background-color: var(--col-bg-dark);
 
 	/* Fullscreen, No Scrolling */
