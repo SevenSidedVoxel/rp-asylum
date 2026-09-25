@@ -52,7 +52,7 @@ body {
 	flex-wrap: wrap;
 
 	flex-direction: column;
-	@media (min-width: 768px) {
+	@media (min-width: 768px) or (orientation: portrait) {
 		flex-direction: row;
 	}
 }
