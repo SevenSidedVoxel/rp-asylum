@@ -3,7 +3,7 @@ import { GameView } from "./views/GameView";
 import { MainMenuView } from "./views/MainMenuView";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "barycentric";
+export const BuildID = "banal";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Display version number

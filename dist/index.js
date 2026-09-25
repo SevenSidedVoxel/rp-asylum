@@ -135,8 +135,8 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260925_162303";
-var BuildID = "barycentric";
+var BuildTimestamp = "v20260925_162729";
+var BuildID = "banal";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;

@@ -22,6 +22,13 @@
 	display: grid;
 	grid-template-columns: repeat(var(--grid-size), 1fr);
 	grid-template-rows: repeat(var(--grid-size), 1fr);
+
+	/* Disable default gesture/dragging hints */
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-webkit-user-drag: none;
+	user-select: none;
+	touch-action: none;
 }
 
 .tile {
@@ -32,10 +39,8 @@
 
 	transition: border-color 0.1s ease, background-color 0.1s ease;
 
-	/* Disable dragging hints */
-	-webkit-user-drag: none;
-	user-select: none;
-	-webkit-user-select: none;
+	/* Disable default gesture/dragging hints */
+	touch-action: none;
 }
 
 .tile-a {

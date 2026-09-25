@@ -60,6 +60,11 @@
   display: grid;
   grid-template-columns: repeat(var(--grid-size), 1fr);
   grid-template-rows: repeat(var(--grid-size), 1fr);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  touch-action: none;
   border-radius: 8px;
   width: calc(min(100vw, 100dvh) - 80px);
   padding: 20px;
@@ -70,9 +75,7 @@
   position: relative;
   aspect-ratio: 1;
   z-index: 1;
-  -webkit-user-drag: none;
-  user-select: none;
-  -webkit-user-select: none;
+  touch-action: none;
   transition: border-color .1s, background-color .1s;
 }
 
