@@ -47,8 +47,8 @@ class HomeView {
 }
 
 // src/script.ts
-var BuildTimestamp = "v20260925_005924";
-var BuildID = "beaver";
+var BuildTimestamp = "v20260925_011444";
+var BuildID = "antelope";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;

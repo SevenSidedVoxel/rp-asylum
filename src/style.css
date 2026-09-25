@@ -68,32 +68,33 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+
+	@media (orientation: portrait) {
+		align-items: flex-start;
+	}
 }
 
 .sections-ctr {
+	/* background-color: red; */
 	display: flex;
 	gap: 30px;
+	margin: 30px;
 
 	flex-direction: row;
 	align-items: center;
-	justify-content: stretch;
+	justify-content: center;
 	width: 100vw;
-	margin: 50px;
 
 	@media (orientation: portrait) {
 		flex-direction: column;
-		align-items: stretch;
+		align-items: center;
 		justify-content: center;
-
-		width: calc(min(100vw, (100vh - 80px) / 2));
 	}
 }
 
 .sections-item {
 	flex: 1;
 	aspect-ratio: 1 / 1;
-
-	@media (orientation: portrait) {}
 
 	padding: 32px;
 	background-color: var(--col-bg-panel);
@@ -103,6 +104,16 @@ body {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-start;
+	justify-self: center;
+	align-self: center;
+
+	@media (orientation: portrait) {
+		width: min(100vw, 50vh - 110px);
+	}
+
+	@media (orientation: landscape) and (min-width: 768px) {
+		max-width: 400px;
+	}
 }
 
 .content-box-footer {

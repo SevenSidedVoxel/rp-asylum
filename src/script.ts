@@ -2,7 +2,7 @@ import { RootCtx } from "./views";
 import { HomeView } from "./views/home";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "beaver";
+export const BuildID = "antelope";
 
 document.addEventListener("DOMContentLoaded", () => {
 	// Display version number

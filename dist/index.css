@@ -51,22 +51,27 @@ html, body {
   height: 100vh;
 }
 
+@media (orientation: portrait) {
+  #content-root {
+    align-items:  flex-start;
+  }
+}
+
 .sections-ctr {
   display: flex;
   flex-direction: row;
-  justify-content: stretch;
+  justify-content: center;
   align-items:  center;
   gap: 30px;
   width: 100vw;
-  margin: 50px;
+  margin: 30px;
 }
 
 @media (orientation: portrait) {
   .sections-ctr {
     flex-direction: column;
     justify-content: center;
-    align-items: stretch;
-    width: calc(min(100vw, 50vh - 40px));
+    align-items:  center;
   }
 }
 
@@ -79,7 +84,20 @@ html, body {
   flex-direction: column;
   flex: 1;
   justify-content: flex-start;
+  place-self:  center;
   padding: 32px;
+}
+
+@media (orientation: portrait) {
+  .sections-item {
+    width: min(100vw, 50vh - 110px);
+  }
+}
+
+@media (orientation: landscape) and (min-width: 768px) {
+  .sections-item {
+    max-width: 400px;
+  }
 }
 
 .content-box-footer {
