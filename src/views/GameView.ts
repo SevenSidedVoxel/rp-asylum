@@ -1,7 +1,7 @@
 import { BuildID, BuildTimestamp } from "..";
 import { IView, AppCtx } from "../AppCtx";
 import { P2 } from "../game/coords";
-import { GameState, Tile, TileTypes } from "../game/gameState";
+import { GameState, TileTypes } from "../game/gameState";
 
 function getPosFromTileElem(tile: Element | null | undefined) {
 	if (!tile) return;
@@ -140,14 +140,19 @@ export class GameView implements IView {
 	//#region Visual State
 
 	private _applyingAnims = false;
+	private _fastApplyAnims = false;
 	applyAnims() {
-		if (this._applyingAnims) return;
+		if (this._applyingAnims) {
+			this._fastApplyAnims = true;
+			return;
+		}
 		this._applyingAnims = true;
 		this.applyNextAnim();
 	}
 	private applyNextAnim() {
 		if (this.state.anims.length < 1) {
 			this._applyingAnims = false;
+			this._fastApplyAnims = false;
 			return;
 		}
 
@@ -155,9 +160,10 @@ export class GameView implements IView {
 		anim?.act();
 
 		// Delay before the next anim
+		const delayMS = this._fastApplyAnims ? 65 : 150;
 		setTimeout(() => {
 			this.applyNextAnim();
-		}, 100);
+		}, delayMS);
 	}
 
 	//#endregion Visual State

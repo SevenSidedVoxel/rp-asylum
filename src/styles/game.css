@@ -12,6 +12,11 @@
 	--col-tile-house2: #9e3925;
 	--col-tile-house3: #cf4a31;
 	--col-tile-road1: #151533;
+	--col-tile-road2: #222252;
+	--col-tile-bridge: #182850;
+	--col-tile-water: #1a4a71;
+	--col-tile-grass: #2b6228;
+	--col-tile-tree1: #40943d;
 
 	--border-width: 2px;
 	--grid-size: 8;
@@ -94,34 +99,30 @@
 	aspect-ratio: 1 / 1;
 	z-index: 1;
 
-	transition: border-color 0.1s ease, background-color 0.1s ease;
-
 	/* Disable default gesture/dragging hints */
 	touch-action: none;
 }
 
 .tile-a {
 	background-color: var(--col-tile-light);
-	border: var(--border-width) solid var(--col-tile-light);
 }
 
 .tile-b {
 	background-color: var(--col-tile-dark);
-	border: var(--border-width) solid var(--col-tile-dark);
 }
 
 .tile.highlight-col {
-	filter: brightness(1.1);
-	border-left: var(--border-width) solid var(--col-tile-highlight);
-	border-right: var(--border-width) solid var(--col-tile-highlight);
-	z-index: 10;
+	/* filter: brightness(1.1); */
+	/* border-left: var(--border-width) solid var(--col-tile-highlight);
+	border-right: var(--border-width) solid var(--col-tile-highlight); */
+	/* z-index: 10; */
 }
 
 .tile.highlight-row {
-	filter: brightness(1.1);
-	border-top: var(--border-width) solid var(--col-tile-highlight);
-	border-bottom: var(--border-width) solid var(--col-tile-highlight);
-	z-index: 10;
+	/* filter: brightness(1.1); */
+	/* border-top: var(--border-width) solid var(--col-tile-highlight);
+	border-bottom: var(--border-width) solid var(--col-tile-highlight); */
+	/* z-index: 10; */
 }
 
 .tile.highlight {
@@ -137,17 +138,6 @@
 	border: var(--border-width) solid var(--col-tile-highlight2);
 }
 
-.tile[data-check]::after {
-	content: '';
-	position: absolute;
-	top: 10px;
-	right: 10px;
-	width: 16px;
-	height: 16px;
-	background-color: #40943d;
-	border-radius: 50%;
-}
-
 .tile[data-tile="House1"] {
 	background-color: var(--col-tile-house1);
 }
@@ -160,4 +150,20 @@
 
 .tile[data-tile="Road"] {
 	background-color: var(--col-tile-road1);
+}
+.tile[data-tile="Intersection"] {
+	background-color: var(--col-tile-road2);
+}
+.tile[data-tile="Bridge"] {
+	background-color: var(--col-tile-bridge);
+}
+
+.tile[data-tile="Water"] {
+	background-color: var(--col-tile-water);
+}
+.tile[data-tile="Grass"] {
+	background-color: var(--col-tile-grass);
+}
+.tile[data-tile="Tree"] {
+	background-color: var(--col-tile-tree1);
 }

@@ -47,6 +47,7 @@ class GameState {
   nature = 0;
   grid = new Grid;
   rules = GameState.makeRules();
+  items = [];
   anims = [];
   placeTile(pos, type) {
     const tile = this.grid.getTile(pos);
@@ -57,6 +58,19 @@ class GameState {
         this.setTileType(tile, type);
         this.addScore(tile, 1);
         this.addPop(tile, 1);
+        break;
+      case 8 /* Grass */:
+        if (tile.type !== 1 /* Empty */)
+          return;
+        this.setTileType(tile, type);
+        this.addScore(tile, 1);
+        this.addNat(tile, 1);
+        break;
+      case 5 /* Road */:
+        if (tile.type !== 1 /* Empty */)
+          return;
+        this.setTileType(tile, type);
+        this.addScore(tile, 1);
         break;
       default:
         console.warn(`Not Implemented: Placing tile ${TileTypes[type]} on ${pos.name()}`);
@@ -118,6 +132,33 @@ class GameState {
       game.setTileType(area.cc, 6 /* Intersection */);
       game.addScore(area.cc, 4);
     }, 1 /* Rotate1 */));
+    rules.push(new Rule("Make Tree", {
+      cc: 8 /* Grass */,
+      tc: 8 /* Grass */,
+      tl: 8 /* Grass */,
+      cl: 8 /* Grass */
+    }, (game, area) => {
+      game.setTileType(area.cc, 9 /* Tree */);
+      game.setTileType(area.tc, 1 /* Empty */);
+      game.setTileType(area.tl, 1 /* Empty */);
+      game.setTileType(area.cl, 1 /* Empty */);
+      game.addScore(area.cc, 4);
+      game.addNat(area.cc, 2);
+    }, 0 /* None */));
+    rules.push(new Rule("Make Pond", {
+      cc: 1 /* Empty */,
+      tc: 8 /* Grass */,
+      tl: 8 /* Grass */,
+      cl: 8 /* Grass */,
+      cr: 8 /* Grass */
+    }, (game, area) => {
+      game.setTileType(area.cc, 10 /* Water */);
+      game.setTileType(area.tc, 1 /* Empty */);
+      game.setTileType(area.tl, 1 /* Empty */);
+      game.setTileType(area.cl, 1 /* Empty */);
+      game.setTileType(area.cr, 1 /* Empty */);
+      game.addScore(area.cc, 2);
+    }, 0 /* None */));
     return rules;
   }
   addScore(tile, s) {
@@ -125,6 +166,9 @@ class GameState {
   }
   addPop(tile, p) {
     this.population += p;
+  }
+  addNat(tile, n) {
+    this.nature += n;
   }
   setTileType(tile, type) {
     if (tile.type === type)
@@ -138,6 +182,16 @@ class GameState {
         tile.Elem.setAttribute("data-tile", TileTypes[type]);
       }));
     }
+  }
+  addItem(type, count) {
+    count ??= 1;
+    for (const item of this.items) {
+      if (item.type === type) {
+        item.count += count;
+        return;
+      }
+    }
+    this.items.push(new Item(type, count));
   }
   tilesToCheck = 0;
   markForCheck(x, y) {
@@ -255,9 +309,18 @@ function isTile(pattern, type) {
   return pattern === 0 /* Any */ || pattern === type;
 }
 
+class Item {
+  type;
+  count;
+  constructor(type, count) {
+    this.type = type;
+    this.count = count;
+  }
+}
+
 class Tile {
-  type = 1 /* Empty */;
   pos;
+  type;
   shouldCheck = false;
   Elem = null;
   constructor(pos, type) {
@@ -464,22 +527,27 @@ class GameView {
     this._boardElem?.querySelectorAll(`.tile`)?.forEach((tile) => tile.classList.remove("highlight", "highlight-row", "highlight-col"));
   }
   _applyingAnims = false;
+  _fastApplyAnims = false;
   applyAnims() {
-    if (this._applyingAnims)
+    if (this._applyingAnims) {
+      this._fastApplyAnims = true;
       return;
+    }
     this._applyingAnims = true;
     this.applyNextAnim();
   }
   applyNextAnim() {
     if (this.state.anims.length < 1) {
       this._applyingAnims = false;
+      this._fastApplyAnims = false;
       return;
     }
     const anim = this.state.anims.shift();
     anim?.act();
+    const delayMS = this._fastApplyAnims ? 65 : 150;
     setTimeout(() => {
       this.applyNextAnim();
-    }, 100);
+    }, delayMS);
   }
   _pressTileData = null;
   pressTileStart(coord) {
@@ -500,8 +568,8 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260926_133954";
-var BuildID = "buttercup";
+var BuildTimestamp = "v20260926_142122";
+var BuildID = "bannock";
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("content-root");
   var ctx = new AppCtx(root);

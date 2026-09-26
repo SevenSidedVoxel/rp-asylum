@@ -8,8 +8,8 @@ export class GameState {
 
 	public grid: Grid = new Grid();
 	public rules: Rule[] = GameState.makeRules();
+	public items: Item[] = [];
 	public anims: GameAnim[] = [];
-
 
 	public placeTile(pos: P2, type: TileTypes) {
 		const tile = this.grid.getTile(pos);
@@ -20,6 +20,21 @@ export class GameState {
 				this.setTileType(tile, type);
 				this.addScore(tile, 1);
 				this.addPop(tile, 1);
+				break;
+
+			case TileTypes.Grass:
+				if (tile.type !== TileTypes.Empty)
+					return; // not empty
+				this.setTileType(tile, type);
+				this.addScore(tile, 1);
+				this.addNat(tile, 1);
+				break;
+
+			case TileTypes.Road:
+				if (tile.type !== TileTypes.Empty)
+					return; // not empty
+				this.setTileType(tile, type);
+				this.addScore(tile, 1);
 				break;
 
 			default:
@@ -105,6 +120,41 @@ export class GameState {
 			},
 			MatchFlags.Rotate1));
 
+		rules.push(new Rule("Make Tree",
+			{
+				cc: TileTypes.Grass,
+				tc: TileTypes.Grass,
+				tl: TileTypes.Grass,
+				cl: TileTypes.Grass,
+			},
+			(game, area) => {
+				game.setTileType(area.cc, TileTypes.Tree);
+				game.setTileType(area.tc, TileTypes.Empty);
+				game.setTileType(area.tl, TileTypes.Empty);
+				game.setTileType(area.cl, TileTypes.Empty);
+				game.addScore(area.cc, 4);
+				game.addNat(area.cc, 2);
+			},
+			MatchFlags.None));
+
+		rules.push(new Rule("Make Pond",
+			{
+				cc: TileTypes.Empty,
+				tc: TileTypes.Grass,
+				tl: TileTypes.Grass,
+				cl: TileTypes.Grass,
+				cr: TileTypes.Grass,
+			},
+			(game, area) => {
+				game.setTileType(area.cc, TileTypes.Water);
+				game.setTileType(area.tc, TileTypes.Empty);
+				game.setTileType(area.tl, TileTypes.Empty);
+				game.setTileType(area.cl, TileTypes.Empty);
+				game.setTileType(area.cr, TileTypes.Empty);
+				game.addScore(area.cc, 2);
+			},
+			MatchFlags.None));
+
 		return rules;
 	}
 
@@ -116,6 +166,10 @@ export class GameState {
 
 	private addPop(tile: Tile, p: number) {
 		this.population += p;
+	}
+
+	private addNat(tile: Tile, n: number) {
+		this.nature += n;
 	}
 
 	private setTileType(tile: Tile, type: TileTypes) {
@@ -136,6 +190,22 @@ export class GameState {
 	}
 
 	//#endregion State Modification
+
+	//#region Items
+
+	public addItem(type: TileTypes, count?: number) {
+		count ??= 1;
+		for (const item of this.items) {
+			if (item.type === type) {
+				item.count += count;
+				return;
+			}
+		}
+
+		this.items.push(new Item(type, count));
+	}
+
+	//#endregion Items
 
 	//#region Rule Application
 
@@ -288,16 +358,15 @@ function isTile(pattern: TileTypes, type: TileTypes): boolean {
 	return pattern === TileTypes.Any || pattern === type;
 }
 
-export class Tile {
-	public type: TileTypes = TileTypes.Empty;
-	public pos: P2;
-	public shouldCheck: boolean = false;
+export class Item {
+	constructor(public type: TileTypes, public count: number) { }
+}
 
+export class Tile {
+	public shouldCheck: boolean = false;
 	public Elem: Element | null = null;
 
-	public constructor(pos: P2, type: TileTypes) {
-		this.pos = pos;
-		this.type = type;
+	constructor(public pos: P2, public type: TileTypes) {
 	}
 }
 
@@ -305,7 +374,7 @@ class Grid {
 	public size: number = 10;
 	public tiles: Tile[];
 
-	public constructor() {
+	constructor() {
 		this.tiles = Array(this.size * this.size);
 		for (let y = 0; y < this.size; ++y) {
 			for (let x = 0; x < this.size; ++x) {
@@ -351,7 +420,7 @@ export class Match3x3 {
 	public bc: TileTypes = TileTypes.Any;
 	public br: TileTypes = TileTypes.Any;
 
-	public constructor(init?: Partial<Match3x3>) {
+	constructor(init?: Partial<Match3x3>) {
 		Object.assign(this, init);
 	}
 
@@ -371,7 +440,7 @@ export class Match3x3 {
 type TileArray3x3 = [Tile, Tile, Tile, Tile, Tile, Tile, Tile, Tile, Tile];
 
 export class Area3x3 {
-	public constructor(
+	constructor(
 		public tl: Tile, public tc: Tile, public tr: Tile,
 		public cl: Tile, public cc: Tile, public cr: Tile,
 		public bl: Tile, public bc: Tile, public br: Tile
@@ -398,7 +467,7 @@ export class Rule {
 	public matchFlags: MatchFlags;
 	public apply: (game: GameState, area: Area3x3) => void;
 
-	public constructor(
+	constructor(
 		name: string,
 		match: Partial<Match3x3>,
 		apply: (game: GameState, area: Area3x3) => void,
