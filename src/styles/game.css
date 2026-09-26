@@ -1,5 +1,5 @@
 @import "./colors.css";
-@import "./game-info.css";
+@import "./credits.css";
 
 :root {
 	--col-tile-light: #272e3b;
@@ -7,6 +7,11 @@
 	--col-tile-border: #1d2831;
 	--col-tile-highlight: #1d2831;
 	--col-tile-highlight2: #204c45;
+
+	--col-tile-house1: #73291b;
+	--col-tile-house2: #9e3925;
+	--col-tile-house3: #cf4a31;
+	--col-tile-road1: #151533;
 
 	--border-width: 2px;
 	--grid-size: 8;
@@ -57,50 +62,6 @@
 		max-width: calc(0.5 * var(--game-size));
 		height: calc(var(--game-size) - 2 * var(--game-padding));
 	}
-}
-
-.credits-landscape,
-.credits-portrait {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	margin-top: auto;
-}
-
-.credits-landscape {
-	@media (orientation: portrait) {
-		display: none;
-	}
-}
-
-.credit {
-	margin: 10px;
-}
-
-.version {
-	font-size: 10px;
-	opacity: 20%;
-	margin-top: 0px;
-	margin-bottom: 5px;
-}
-
-.credits-portrait {
-	max-width: var(--game-size);
-	background-color: var(--col-bg-panel);
-	border-radius: 8px;
-	width: 100%;
-
-	@media (orientation: landscape) {
-		display: none;
-	}
-}
-
-.kofi-link {
-	/* display: inline-flex; */
-	/* align-items: center; */
-	width: fit-content;
-	height: fit-content;
 }
 
 .game-board {
@@ -176,6 +137,27 @@
 	border: var(--border-width) solid var(--col-tile-highlight2);
 }
 
-.tile.linger {
-	filter: saturate(3);
+.tile[data-check]::after {
+	content: '';
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 16px;
+	height: 16px;
+	background-color: #40943d;
+	border-radius: 50%;
+}
+
+.tile[data-tile="House1"] {
+	background-color: var(--col-tile-house1);
+}
+.tile[data-tile="House2"] {
+	background-color: var(--col-tile-house2);
+}
+.tile[data-tile="House3"] {
+	background-color: var(--col-tile-house3);
+}
+
+.tile[data-tile="Road"] {
+	background-color: var(--col-tile-road1);
 }

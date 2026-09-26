@@ -1,9 +1,7 @@
 import { BuildID, BuildTimestamp } from "..";
 import { IView, AppCtx } from "../AppCtx";
-
-function coordToLetter(n: number): string {
-	return String.fromCharCode(65 + n);
-}
+import { P2 } from "../game/coords";
+import { GameState, Tile, TileTypes } from "../game/gameState";
 
 function getPosFromTileElem(tile: Element | null | undefined) {
 	if (!tile) return;
@@ -14,65 +12,38 @@ function getPosFromTileElem(tile: Element | null | undefined) {
 	return new P2(parseInt(xData, 10), parseInt(yData, 10));
 }
 
-class P2 {
-	public x: number = 0;
-	public y: number = 0;
-
-	constructor(x?: number, y?: number) {
-		this.x = x ?? 0;
-		this.y = y ?? x ?? 0;
-	}
-
-	public name() { return `${coordToLetter(this.x)}${this.y + 1}`; }
-}
-
-class Tile {
-	public pos: P2;
-	public effects: number[] = [];
-	public Elem: Element;
-
-	constructor(pos: P2, elem: Element) {
-		this.pos = pos;
-		this.Elem = elem;
-	}
-
-	public addRecolorEffect(durationMS: number) {
-		this.Elem.classList.add('linger');
-		this.effects.push(window.setTimeout(() => {
-			this.Elem.classList.remove('linger');
-		}, durationMS));
-	}
-}
-
 export class GameView implements IView {
 	private _ctx: AppCtx;
 	private _boardElem: HTMLElement | null | undefined;
 	private _infoElem: HTMLElement | null | undefined;
 
-	private _gridSize = 8;
-	private _tiles: Tile[];
+	private state: GameState = new GameState();
 
 	public constructor(ctx: AppCtx) {
 		this._ctx = ctx;
-		this._tiles = Array(this._gridSize * this._gridSize).fill(undefined);
 	}
 
 	enter(ctx: AppCtx): void {
 		let gridHtml = ``;
-		for (let r = 0; r < this._gridSize; ++r) {
-			const row = this._gridSize - (r + 1);
-			for (let c = 0; c < this._gridSize; ++c) {
+		const size = this.state.grid.size - 2;
+		for (let r = 0; r < size; ++r) {
+			const row = size - (r + 1);
+			const y = row + 1;
+
+			for (let c = 0; c < size; ++c) {
 				const tileAB = (row % 2 + c) % 2 ? 'a' : 'b';
+				const x = c + 1;
+
 				gridHtml += /*html*/`<div
-					id="tile_${c}_${row}"
-					class="tile tile-${tileAB} tile-row${row} tile-col${c}"
-					data-row=${row}
-					data-col=${c}>
+					id="tile_${x}_${y}"
+					class="tile tile-${tileAB} tile-row${y} tile-col${x}"
+					data-row=${y}
+					data-col=${x}>
 				</div>`;
 			}
 		}
 
-		const creditsHtml=/*html*/`
+		const creditsHtml =/*html*/`
 <p class="credit">Developed by SevenSidedVoxel</p>
 <a class="kofi-link" href='https://ko-fi.com/C5L027OU2F' target='_blank'>
 	<img style='height:2em;'
@@ -106,12 +77,13 @@ export class GameView implements IView {
 		this._infoElem = ctx.root.querySelector("#gameInfo");
 		if (this._infoElem == null) return;
 
-		for (let r = 0; r < this._gridSize; ++r) {
-			for (let c = 0; c < this._gridSize; ++c) {
-				const tileElem = this._boardElem.querySelector(`#tile_${c}_${r}`);
+		for (let y = 1; y < size + 1; ++y) {
+			for (let x = 1; x < size + 1; ++x) {
+				const tileElem = this._boardElem.querySelector(`#tile_${x}_${y}`);
 				if (!tileElem) continue;
-				const tile = this.makeTile(c, r, tileElem);
-				const pos = new P2(c, r);
+				const pos = new P2(x, y);
+				const tile = this.state.grid.getTile(pos);
+				tile.Elem = tileElem;
 				tile.Elem.addEventListener('mouseenter', () => this.hoverTileStart(pos));
 				tile.Elem.addEventListener('mouseleave', () => this.hoverTileEnd(pos));
 			}
@@ -135,17 +107,12 @@ export class GameView implements IView {
 
 	exit(ctx): void { }
 
-	makeTile(c: number, r: number, elem: Element): Tile {
-		const index = r * this._gridSize + c;
-		this._tiles[index] = new Tile(new P2(c, r), elem);
-		return this._tiles[index]!;
-	}
-	getTile(c: number, r: number): Tile {
-		return this._tiles[r * this._gridSize + c]!;
-	}
-
 	clickTile(pos: P2) {
 		// console.log(`clicked ${pos.name()}`);
+		let tile = this.state.grid.getTile(pos);
+		this.state.setTileType(tile, TileTypes.House1);
+		this.state.applyRules();
+		this.applyAnims();
 	}
 	dragTile(start: P2, end: P2) {
 		// console.log(`drag ${start.name()} to ${end.name()}`);
@@ -172,6 +139,31 @@ export class GameView implements IView {
 			forEach(tile => tile.classList.remove('highlight', 'highlight-row', 'highlight-col'));
 	}
 
+	//#region Visual State
+
+	private _applyingAnims = false;
+	applyAnims() {
+		if (this._applyingAnims) return;
+		this._applyingAnims = true;
+		this.applyNextAnim();
+	}
+	private applyNextAnim() {
+		if (this.state.anims.length < 1) {
+			this._applyingAnims = false;
+			return;
+		}
+
+		const anim = this.state.anims.shift();
+		anim?.act();
+
+		// Delay before the next anim
+		setTimeout(() => {
+			this.applyNextAnim();
+		}, 100);
+	}
+
+	//#endregion Visual State
+
 	//#region Pointer Handlers
 
 	private _pressTileData: P2 | null = null;
@@ -196,5 +188,5 @@ export class GameView implements IView {
 		this._pressTileData = null;
 	}
 
-	//#endregion
+	//#endregion Pointer Handlers
 }

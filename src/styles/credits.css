@@ -1,0 +1,45 @@
+@import "./colors.css";
+
+.credits-landscape,
+.credits-portrait {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	margin-top: auto;
+}
+
+.credits-landscape {
+	@media (orientation: portrait) {
+		display: none;
+	}
+}
+
+.credit {
+	margin: 10px;
+}
+
+.version {
+	font-size: 10px;
+	opacity: 20%;
+	margin-top: 0px;
+	margin-bottom: 5px;
+}
+
+.credits-portrait {
+	max-width: var(--game-size);
+	background-color: var(--col-bg-panel);
+	border-radius: 8px;
+	width: 100%;
+
+	@media (orientation: landscape) {
+		display: none;
+	}
+}
+
+.kofi-link {
+	/* display: inline-flex; */
+	/* align-items: center; */
+	width: fit-content;
+	height: fit-content;
+}
