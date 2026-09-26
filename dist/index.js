@@ -20,6 +20,18 @@ function coordToLetter(n) {
   return String.fromCharCode(65 + n);
 }
 
+class P2 {
+  x = 0;
+  y = 0;
+  constructor(x, y) {
+    this.x = x ?? 0;
+    this.y = y ?? x ?? 0;
+  }
+  name() {
+    return `${coordToLetter(this.x)}${this.y + 1}`;
+  }
+}
+
 class Tile {
   effects = [];
   Elem;
@@ -37,6 +49,7 @@ class Tile {
 class GameView {
   _ctx;
   _boardElem;
+  _infoElem;
   _gridSize = 8;
   _tiles;
   constructor(ctx) {
@@ -58,12 +71,20 @@ class GameView {
       }
     }
     ctx.root.innerHTML = `
-<section id="gameBoard" class="game-board">
-	${gridHtml}
-</section>
+<div class="game">
+	<section id="gameBoard" class="game-board">
+		${gridHtml}
+	</section>
+	<section id="gameInfo" class="game-info">
+		<h2>Info</h2>
+	</section>
+</div>
 		`;
     this._boardElem = ctx.root.querySelector("#gameBoard");
     if (this._boardElem == null)
+      return;
+    this._infoElem = ctx.root.querySelector("#gameInfo");
+    if (this._infoElem == null)
       return;
     for (let r = 0;r < this._gridSize; ++r) {
       for (let c = 0;c < this._gridSize; ++c) {
@@ -71,11 +92,12 @@ class GameView {
         if (!tileElem)
           continue;
         const tile = this.makeTile(c, r, tileElem);
-        tile.Elem.addEventListener("pointerdown", () => this.pressTileStart(c, r));
-        tile.Elem.addEventListener("pointerup", () => this.pressTileEnd(c, r));
-        tile.Elem.addEventListener("pointercancel", this.cancelPressTile);
-        tile.Elem.addEventListener("mouseenter", () => this.hoverTileStart(c, r));
-        tile.Elem.addEventListener("mouseleave", () => this.hoverTileEnd(c, r));
+        const pos = new P2(c, r);
+        tile.Elem.addEventListener("pointerdown", () => this.pressTileStart(pos));
+        tile.Elem.addEventListener("pointerup", () => this.pressTileEnd(pos));
+        tile.Elem.addEventListener("pointercancel", this.pressTileCancel);
+        tile.Elem.addEventListener("mouseenter", () => this.hoverTileStart(pos));
+        tile.Elem.addEventListener("mouseleave", () => this.hoverTileEnd(pos));
         tile.Elem.addEventListener("dragstart", (e) => e.preventDefault());
       }
     }
@@ -89,54 +111,63 @@ class GameView {
   getTile(c, r) {
     return this._tiles[r * this._gridSize + c];
   }
-  shortPressTile(c, r) {
-    console.log(`Short tap ${coordToLetter(c)}${r + 1}`);
+  recentMessages = [];
+  clickTile(pos) {
+    console.log(`clicked ${pos.name()}`);
+    this.recentMessages.push(`clicked ${pos.name()}`);
+    while (this.recentMessages.length > 10)
+      this.recentMessages.shift();
+    this._infoElem.innerHTML = ``;
+    this.recentMessages.forEach((msg) => {
+      this._infoElem.innerHTML += `
+				<p>${msg}</p>
+			`;
+    });
   }
-  longPressTile(c, r) {
-    console.log(`Long press ${coordToLetter(c)}${r + 1}`);
-    this.getTile(c, r).addRecolorEffect(1000);
+  dragTile(start, end) {
+    console.log(`drag ${start.name()} to ${end.name()}`);
+    this.recentMessages.push(`drag ${start.name()} to ${end.name()}`);
+    while (this.recentMessages.length > 10)
+      this.recentMessages.shift();
+    this._infoElem.innerHTML = ``;
+    this.recentMessages.forEach((msg) => {
+      this._infoElem.innerHTML += `
+				<p>${msg}</p>
+			`;
+    });
   }
-  clickTile(c, r) {
-    console.log(`clicked ${coordToLetter(c)}${r + 1}`);
+  hoverTileStart(pos) {
+    this._boardElem?.querySelectorAll(`.tile-row${pos.y}`)?.forEach((tile) => tile.classList.add("highlight-row"));
+    this._boardElem?.querySelectorAll(`.tile-col${pos.x}`)?.forEach((tile) => tile.classList.add("highlight-col"));
+    this._boardElem?.querySelector(`#tile_${pos.x}_${pos.y}`)?.classList.add("highlight");
   }
-  hoverTileStart(c, r) {
-    this._boardElem?.querySelectorAll(`.tile-row${r}`)?.forEach((tile) => tile.classList.add("highlight-row"));
-    this._boardElem?.querySelectorAll(`.tile-col${c}`)?.forEach((tile) => tile.classList.add("highlight-col"));
-    this._boardElem?.querySelector(`#tile_${c}_${r}`)?.classList.add("highlight");
-  }
-  hoverTileEnd(c, r) {
-    this.cancelPressTile();
+  hoverTileEnd(pos) {
     this.clearHighlighting();
   }
   clearHighlighting() {
     this._boardElem?.querySelectorAll(`.tile`)?.forEach((tile) => tile.classList.remove("highlight", "highlight-row", "highlight-col"));
   }
-  _pressTimer = null;
-  pressTileStart(c, r) {
-    const LONG_PRESS_DURATION = 500;
-    this._pressTimer = window.setTimeout(() => {
-      this._pressTimer = null;
-      this.longPressTile(c, r);
-    }, LONG_PRESS_DURATION);
+  _pressTileData = null;
+  pressTileStart(coord) {
+    this._pressTileData = coord;
   }
-  pressTileEnd(c, r) {
-    if (this._pressTimer !== null) {
-      clearTimeout(this._pressTimer);
-      this._pressTimer = null;
-      this.shortPressTile(c, r);
-    }
+  pressTileEnd(pos) {
+    if (this._pressTileData === null)
+      return;
+    if (this._pressTileData.x !== pos.x || this._pressTileData.y !== pos.y) {
+      this.dragTile(this._pressTileData, pos);
+    } else
+      this.clickTile(pos);
+    this._pressTileData = null;
   }
-  cancelPressTile() {
-    if (this._pressTimer !== null) {
-      clearTimeout(this._pressTimer);
-      this._pressTimer = null;
-    }
+  pressTileCancel() {
+    this._pressTileData = null;
   }
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260925_162729";
-var BuildID = "banal";
+var BuildTimestamp = "v20260925_170005";
+var BuildID = "banana";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;

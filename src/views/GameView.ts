@@ -4,6 +4,18 @@ function coordToLetter(n: number): string {
 	return String.fromCharCode(65 + n);
 }
 
+class P2 {
+	public x: number = 0;
+	public y: number = 0;
+
+	constructor(x?: number, y?: number) {
+		this.x = x ?? 0;
+		this.y = y ?? x ?? 0;
+	}
+
+	public name() { return `${coordToLetter(this.x)}${this.y + 1}`; }
+}
+
 class Tile {
 	public effects: number[] = [];
 	public Elem: Element;
@@ -23,6 +35,7 @@ class Tile {
 export class GameView implements IView {
 	private _ctx: AppCtx;
 	private _boardElem: HTMLElement | null | undefined;
+	private _infoElem: HTMLElement | null | undefined;
 
 	private _gridSize = 8;
 	private _tiles: Tile[];
@@ -48,24 +61,33 @@ export class GameView implements IView {
 		}
 
 		ctx.root.innerHTML = /*html*/`
-<section id="gameBoard" class="game-board">
-	${gridHtml}
-</section>
+<div class="game">
+	<section id="gameBoard" class="game-board">
+		${gridHtml}
+	</section>
+	<section id="gameInfo" class="game-info">
+		<h2>Info</h2>
+	</section>
+</div>
 		`;
 
 		this._boardElem = ctx.root.querySelector("#gameBoard");
 		if (this._boardElem == null) return;
+
+		this._infoElem = ctx.root.querySelector("#gameInfo");
+		if (this._infoElem == null) return;
 
 		for (let r = 0; r < this._gridSize; ++r) {
 			for (let c = 0; c < this._gridSize; ++c) {
 				const tileElem = this._boardElem.querySelector(`#tile_${c}_${r}`);
 				if (!tileElem) continue;
 				const tile = this.makeTile(c, r, tileElem);
-				tile.Elem.addEventListener('pointerdown', () => this.pressTileStart(c, r));
-				tile.Elem.addEventListener('pointerup', () => this.pressTileEnd(c, r));
-				tile.Elem.addEventListener('pointercancel', this.cancelPressTile);
-				tile.Elem.addEventListener('mouseenter', () => this.hoverTileStart(c, r));
-				tile.Elem.addEventListener('mouseleave', () => this.hoverTileEnd(c, r));
+				const pos = new P2(c, r);
+				tile.Elem.addEventListener('pointerdown', () => this.pressTileStart(pos));
+				tile.Elem.addEventListener('pointerup', () => this.pressTileEnd(pos));
+				tile.Elem.addEventListener('pointercancel', this.pressTileCancel);
+				tile.Elem.addEventListener('mouseenter', () => this.hoverTileStart(pos));
+				tile.Elem.addEventListener('mouseleave', () => this.hoverTileEnd(pos));
 				tile.Elem.addEventListener('dragstart', (e) => e.preventDefault());
 			}
 		}
@@ -84,32 +106,49 @@ export class GameView implements IView {
 		return this._tiles[r * this._gridSize + c]!;
 	}
 
-	shortPressTile(c: number, r: number) {
-		console.log(`Short tap ${coordToLetter(c)}${r + 1}`);
+	recentMessages: any = [];
+	clickTile(pos: P2) {
+		console.log(`clicked ${pos.name()}`);
+
+		this.recentMessages.push(`clicked ${pos.name()}`);
+		while (this.recentMessages.length > 10)
+			this.recentMessages.shift();
+
+		this._infoElem!.innerHTML = ``;
+		this.recentMessages.forEach(msg => {
+			this._infoElem!.innerHTML += /*html*/`
+				<p>${msg}</p>
+			`;
+		});
+
+	}
+	dragTile(start: P2, end: P2) {
+		console.log(`drag ${start.name()} to ${end.name()}`);
+
+		this.recentMessages.push(`drag ${start.name()} to ${end.name()}`);
+		while (this.recentMessages.length > 10)
+			this.recentMessages.shift();
+
+		this._infoElem!.innerHTML = ``;
+		this.recentMessages.forEach(msg => {
+			this._infoElem!.innerHTML += /*html*/`
+				<p>${msg}</p>
+			`;
+		});
 	}
 
-	longPressTile(c: number, r: number) {
-		console.log(`Long press ${coordToLetter(c)}${r + 1}`);
-		this.getTile(c, r).addRecolorEffect(1000);
-	}
-
-	clickTile(c: number, r: number) {
-		console.log(`clicked ${coordToLetter(c)}${r + 1}`);
-	}
-
-	hoverTileStart(c: number, r: number) {
+	hoverTileStart(pos: P2) {
 		this._boardElem?.
-			querySelectorAll(`.tile-row${r}`)?.
+			querySelectorAll(`.tile-row${pos.y}`)?.
 			forEach(tile => tile.classList.add('highlight-row'));
 		this._boardElem?.
-			querySelectorAll(`.tile-col${c}`)?.
+			querySelectorAll(`.tile-col${pos.x}`)?.
 			forEach(tile => tile.classList.add('highlight-col'));
 		this._boardElem?.
-			querySelector(`#tile_${c}_${r}`)?.
+			querySelector(`#tile_${pos.x}_${pos.y}`)?.
 			classList.add('highlight');
 	}
-	hoverTileEnd(c: number, r: number) {
-		this.cancelPressTile();
+	hoverTileEnd(pos: P2) {
 		this.clearHighlighting();
 	}
 
@@ -121,26 +160,26 @@ export class GameView implements IView {
 
 	//#region Pointer Handlers
 
-	private _pressTimer: number | null = null;
-	pressTileStart(c: number, r: number) {
-		const LONG_PRESS_DURATION = 500; // ms
-		this._pressTimer = window.setTimeout(() => {
-			this._pressTimer = null;
-			this.longPressTile(c, r);
-		}, LONG_PRESS_DURATION);
+	private _pressTileData: P2 | null = null;
+	pressTileStart(coord: P2) {
+		this._pressTileData = coord;
 	}
-	pressTileEnd(c: number, r: number) {
-		if (this._pressTimer !== null) {
-			clearTimeout(this._pressTimer);
-			this._pressTimer = null;
-			this.shortPressTile(c, r);
+	pressTileEnd(pos: P2) {
+		if (this._pressTileData === null)
+			return; // press was cancelled or moved off tile
+
+		if (this._pressTileData.x !== pos.x
+			|| this._pressTileData.y !== pos.y) {
+			// this is a drag
+			this.dragTile(this._pressTileData, pos);
 		}
+		else
+			this.clickTile(pos);
+
+		this._pressTileData = null;
 	}
-	cancelPressTile() {
-		if (this._pressTimer !== null) {
-			clearTimeout(this._pressTimer);
-			this._pressTimer = null;
-		}
+	pressTileCancel() {
+		this._pressTileData = null;
 	}
 
 	//#endregion

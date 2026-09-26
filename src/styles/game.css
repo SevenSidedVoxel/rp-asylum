@@ -1,4 +1,5 @@
 @import "./colors.css";
+@import "./game-info.css";
 
 :root {
 	--col-tile-light: #272e3b;
