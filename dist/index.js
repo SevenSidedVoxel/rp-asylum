@@ -81,13 +81,29 @@ class GameView {
 				</div>`;
       }
     }
+    const creditsHtml = `
+<p class="credit">Developed by SevenSidedVoxel</p>
+<a class="kofi-link" href='https://ko-fi.com/C5L027OU2F' target='_blank'>
+	<img style='height:2em;'
+		src='https://storage.ko-fi.com/cdn/kofi3.png?v=6'
+		alt='Buy Me a Coffee at ko-fi.com' />
+</a>
+<p class="version">${BuildID} - ${BuildTimestamp}</p>
+		`;
     ctx.root.innerHTML = `
 <div class="game">
+	<section id="gameInfo" class="game-info">
+		<h2>Tum Town</h2>
+
+		<div class="credits-landscape">
+			${creditsHtml}
+		</div>
+	</section>
 	<section id="gameBoard" class="game-board">
 		${gridHtml}
 	</section>
-	<section id="gameInfo" class="game-info">
-		<h2>Info</h2>
+	<section id="gameCredits" class="credits-portrait">
+		${creditsHtml}
 	</section>
 </div>
 		`;
@@ -132,31 +148,8 @@ class GameView {
   getTile(c, r) {
     return this._tiles[r * this._gridSize + c];
   }
-  recentMessages = [];
-  clickTile(pos) {
-    console.log(`clicked ${pos.name()}`);
-    this.recentMessages.push(`clicked ${pos.name()}`);
-    while (this.recentMessages.length > 10)
-      this.recentMessages.shift();
-    this._infoElem.innerHTML = `<h2>Info</h2>`;
-    this.recentMessages.forEach((msg) => {
-      this._infoElem.innerHTML += `
-				<p>${msg}</p>
-			`;
-    });
-  }
-  dragTile(start, end) {
-    console.log(`drag ${start.name()} to ${end.name()}`);
-    this.recentMessages.push(`drag ${start.name()} to ${end.name()}`);
-    while (this.recentMessages.length > 10)
-      this.recentMessages.shift();
-    this._infoElem.innerHTML = `<h2>Info</h2>`;
-    this.recentMessages.forEach((msg) => {
-      this._infoElem.innerHTML += `
-				<p>${msg}</p>
-			`;
-    });
-  }
+  clickTile(pos) {}
+  dragTile(start, end) {}
   hoverTileStart(pos) {
     this._boardElem?.querySelectorAll(`.tile-row${pos.y}`)?.forEach((tile) => tile.classList.add("highlight-row"));
     this._boardElem?.querySelectorAll(`.tile-col${pos.x}`)?.forEach((tile) => tile.classList.add("highlight-col"));
@@ -187,11 +180,9 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260925_174258";
-var BuildID = "blueberry";
+var BuildTimestamp = "v20260926_003847";
+var BuildID = "buttercup";
 document.addEventListener("DOMContentLoaded", () => {
-  const footer = document.getElementById("version");
-  footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;
   const root = document.getElementById("content-root");
   var ctx = new AppCtx(root);
   ctx.changeView(new GameView(ctx));

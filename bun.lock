@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "rp-asylum",
+      "name": "tum-town",
       "devDependencies": {
         "@types/bun": "latest",
       },

@@ -71,40 +71,89 @@
     --game-size: calc(min(100vw, 100dvh));
     --game-padding: 0px;
     flex-direction: column;
-    align-items:  flex-start;
   }
 }
 
 @media (orientation: landscape) {
   .game {
-    --game-size: calc(min(100vw, 100dvh)  - 80px);
-    --game-padding: 20px;
-    margin: 20px;
+    --game-size: calc(min(100vw, 100dvh)  - 60px);
+    --game-padding: 10px;
+    margin: var(--game-padding);
+    flex-direction: row;
   }
 }
 
 .game-info {
   background-color: var(--col-bg-panel);
+  display: flex;
   border-radius: 8px;
+  flex-direction: column;
   flex: 1;
+  align-items:  center;
   padding: 20px;
 }
 
 @media (orientation: portrait) {
   .game-info {
     width: var(--game-size);
-    max-height: calc(100% - var(--game-size)  - 50px);
   }
 }
 
 @media (orientation: landscape) {
   .game-info {
-    height: var(--game-size);
+    max-width: calc(.5 * var(--game-size));
+    height: calc(var(--game-size)  - 2 * var(--game-padding));
   }
+}
+
+.credits-landscape, .credits-portrait {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:  center;
+  margin-top: auto;
+}
+
+@media (orientation: portrait) {
+  .credits-landscape {
+    display: none;
+  }
+}
+
+.credit {
+  margin: 10px;
+}
+
+.version {
+  opacity: .2;
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+.credits-portrait {
+  max-width: var(--game-size);
+  background-color: var(--col-bg-panel);
+  border-radius: 8px;
+  width: 100%;
+}
+
+@media (orientation: landscape) {
+  .credits-portrait {
+    display: none;
+  }
+}
+
+.kofi-link {
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
 }
 
 .game-board {
   width: var(--game-size);
+  height: var(--game-size);
   padding: var(--game-padding);
   aspect-ratio: 1;
   background-color: var(--col-bg-panel);
@@ -117,6 +166,7 @@
   user-select: none;
   touch-action: none;
   border-radius: 8px;
+  flex: 0;
 }
 
 .tile {
@@ -271,7 +321,7 @@ h2 {
   color: var(--col-text-default);
 }
 
-.mute {
+.muted {
   color: var(--col-text-muted);
 }
 

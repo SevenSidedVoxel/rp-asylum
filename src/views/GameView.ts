@@ -1,3 +1,4 @@
+import { BuildID, BuildTimestamp } from "..";
 import { IView, AppCtx } from "../AppCtx";
 
 function coordToLetter(n: number): string {
@@ -71,13 +72,30 @@ export class GameView implements IView {
 			}
 		}
 
+		const creditsHtml=/*html*/`
+<p class="credit">Developed by SevenSidedVoxel</p>
+<a class="kofi-link" href='https://ko-fi.com/C5L027OU2F' target='_blank'>
+	<img style='height:2em;'
+		src='https://storage.ko-fi.com/cdn/kofi3.png?v=6'
+		alt='Buy Me a Coffee at ko-fi.com' />
+</a>
+<p class="version">${BuildID} - ${BuildTimestamp}</p>
+		`;
+
 		ctx.root.innerHTML = /*html*/`
 <div class="game">
+	<section id="gameInfo" class="game-info">
+		<h2>Tum Town</h2>
+
+		<div class="credits-landscape">
+			${creditsHtml}
+		</div>
+	</section>
 	<section id="gameBoard" class="game-board">
 		${gridHtml}
 	</section>
-	<section id="gameInfo" class="game-info">
-		<h2>Info</h2>
+	<section id="gameCredits" class="credits-portrait">
+		${creditsHtml}
 	</section>
 </div>
 		`;
@@ -126,35 +144,11 @@ export class GameView implements IView {
 		return this._tiles[r * this._gridSize + c]!;
 	}
 
-	recentMessages: any = [];
 	clickTile(pos: P2) {
-		console.log(`clicked ${pos.name()}`);
-
-		this.recentMessages.push(`clicked ${pos.name()}`);
-		while (this.recentMessages.length > 10)
-			this.recentMessages.shift();
-
-		this._infoElem!.innerHTML = /*html*/`<h2>Info</h2>`;
-		this.recentMessages.forEach(msg => {
-			this._infoElem!.innerHTML += /*html*/`
-				<p>${msg}</p>
-			`;
-		});
-
+		// console.log(`clicked ${pos.name()}`);
 	}
 	dragTile(start: P2, end: P2) {
-		console.log(`drag ${start.name()} to ${end.name()}`);
-
-		this.recentMessages.push(`drag ${start.name()} to ${end.name()}`);
-		while (this.recentMessages.length > 10)
-			this.recentMessages.shift();
-
-		this._infoElem!.innerHTML = /*html*/`<h2>Info</h2>`;
-		this.recentMessages.forEach(msg => {
-			this._infoElem!.innerHTML += /*html*/`
-				<p>${msg}</p>
-			`;
-		});
+		// console.log(`drag ${start.name()} to ${end.name()}`);
 	}
 
 	hoverTileStart(pos: P2) {

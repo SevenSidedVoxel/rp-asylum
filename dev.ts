@@ -108,5 +108,5 @@ const server = serve({
 	}
 });
 
-console.log(`\n🚀 Asylum Tracker running at http://localhost:${PORT}`);
+console.log(`\n🚀 App running at http://localhost:${PORT}`);
 console.log(`💡 Open this link in VS Code's Simple Browser panel!\n`);

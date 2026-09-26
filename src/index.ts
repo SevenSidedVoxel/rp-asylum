@@ -3,13 +3,9 @@ import { GameView } from "./views/GameView";
 import { MainMenuView } from "./views/MainMenuView";
 
 export const BuildTimestamp = __BUILD_TIMESTAMP__;
-export const BuildID = "blueberry";
+export const BuildID = "buttercup";
 
 document.addEventListener("DOMContentLoaded", () => {
-	// Display version number
-	const footer = document.getElementById("version");
-	footer!.innerHTML = `${BuildID} - ${BuildTimestamp}`;
-
 	// Setup root & view
 	const root = document.getElementById("content-root");
 	var ctx = new AppCtx(root);

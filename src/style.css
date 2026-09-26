@@ -106,7 +106,7 @@ h2{
 	color: var(--col-text-default);
 }
 
-.mute {
+.muted {
 	color: var(--col-text-muted);
 }
 
