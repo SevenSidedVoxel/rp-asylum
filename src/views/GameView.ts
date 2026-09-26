@@ -4,6 +4,15 @@ function coordToLetter(n: number): string {
 	return String.fromCharCode(65 + n);
 }
 
+function getPosFromTileElem(tile: Element | null | undefined) {
+	if (!tile) return;
+	const xData = tile.getAttribute('data-col');
+	const yData = tile.getAttribute('data-row');
+	if (!xData || !yData)
+		return;
+	return new P2(parseInt(xData, 10), parseInt(yData, 10));
+}
+
 class P2 {
 	public x: number = 0;
 	public y: number = 0;
@@ -17,10 +26,12 @@ class P2 {
 }
 
 class Tile {
+	public pos: P2;
 	public effects: number[] = [];
 	public Elem: Element;
 
-	constructor(elem: Element) {
+	constructor(pos: P2, elem: Element) {
+		this.pos = pos;
 		this.Elem = elem;
 	}
 
@@ -83,23 +94,32 @@ export class GameView implements IView {
 				if (!tileElem) continue;
 				const tile = this.makeTile(c, r, tileElem);
 				const pos = new P2(c, r);
-				tile.Elem.addEventListener('pointerdown', () => this.pressTileStart(pos));
-				tile.Elem.addEventListener('pointerup', () => this.pressTileEnd(pos));
-				tile.Elem.addEventListener('pointercancel', this.pressTileCancel);
 				tile.Elem.addEventListener('mouseenter', () => this.hoverTileStart(pos));
 				tile.Elem.addEventListener('mouseleave', () => this.hoverTileEnd(pos));
-				tile.Elem.addEventListener('dragstart', (e) => e.preventDefault());
 			}
 		}
+
+		this._boardElem.addEventListener('pointerdown', (e) => {
+			const tile = (e.target as HTMLElement).closest('.tile');
+			var pos = getPosFromTileElem(tile);
+			if (pos !== undefined)
+				this.pressTileStart(pos);
+		});
+		this._boardElem.addEventListener('pointerup', (e) => {
+			const elem = document.elementFromPoint(e.clientX, e.clientY);
+			const tile = elem?.closest('.tile');
+			var pos = getPosFromTileElem(tile);
+			if (pos !== undefined)
+				this.pressTileEnd(pos);
+		});
+		this._boardElem.addEventListener('pointercancel', this.pressTileCancel);
 	}
 
-	exit(ctx): void {
-
-	}
+	exit(ctx): void { }
 
 	makeTile(c: number, r: number, elem: Element): Tile {
 		const index = r * this._gridSize + c;
-		this._tiles[index] = new Tile(elem);
+		this._tiles[index] = new Tile(new P2(c, r), elem);
 		return this._tiles[index]!;
 	}
 	getTile(c: number, r: number): Tile {
@@ -114,7 +134,7 @@ export class GameView implements IView {
 		while (this.recentMessages.length > 10)
 			this.recentMessages.shift();
 
-		this._infoElem!.innerHTML = ``;
+		this._infoElem!.innerHTML = /*html*/`<h2>Info</h2>`;
 		this.recentMessages.forEach(msg => {
 			this._infoElem!.innerHTML += /*html*/`
 				<p>${msg}</p>
@@ -129,7 +149,7 @@ export class GameView implements IView {
 		while (this.recentMessages.length > 10)
 			this.recentMessages.shift();
 
-		this._infoElem!.innerHTML = ``;
+		this._infoElem!.innerHTML = /*html*/`<h2>Info</h2>`;
 		this.recentMessages.forEach(msg => {
 			this._infoElem!.innerHTML += /*html*/`
 				<p>${msg}</p>

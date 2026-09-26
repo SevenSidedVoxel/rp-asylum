@@ -19,6 +19,15 @@ class AppCtx {
 function coordToLetter(n) {
   return String.fromCharCode(65 + n);
 }
+function getPosFromTileElem(tile) {
+  if (!tile)
+    return;
+  const xData = tile.getAttribute("data-col");
+  const yData = tile.getAttribute("data-row");
+  if (!xData || !yData)
+    return;
+  return new P2(parseInt(xData, 10), parseInt(yData, 10));
+}
 
 class P2 {
   x = 0;
@@ -33,9 +42,11 @@ class P2 {
 }
 
 class Tile {
+  pos;
   effects = [];
   Elem;
-  constructor(elem) {
+  constructor(pos, elem) {
+    this.pos = pos;
     this.Elem = elem;
   }
   addRecolorEffect(durationMS) {
@@ -93,19 +104,29 @@ class GameView {
           continue;
         const tile = this.makeTile(c, r, tileElem);
         const pos = new P2(c, r);
-        tile.Elem.addEventListener("pointerdown", () => this.pressTileStart(pos));
-        tile.Elem.addEventListener("pointerup", () => this.pressTileEnd(pos));
-        tile.Elem.addEventListener("pointercancel", this.pressTileCancel);
         tile.Elem.addEventListener("mouseenter", () => this.hoverTileStart(pos));
         tile.Elem.addEventListener("mouseleave", () => this.hoverTileEnd(pos));
-        tile.Elem.addEventListener("dragstart", (e) => e.preventDefault());
       }
     }
+    this._boardElem.addEventListener("pointerdown", (e) => {
+      const tile = e.target.closest(".tile");
+      var pos = getPosFromTileElem(tile);
+      if (pos !== undefined)
+        this.pressTileStart(pos);
+    });
+    this._boardElem.addEventListener("pointerup", (e) => {
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      const tile = elem?.closest(".tile");
+      var pos = getPosFromTileElem(tile);
+      if (pos !== undefined)
+        this.pressTileEnd(pos);
+    });
+    this._boardElem.addEventListener("pointercancel", this.pressTileCancel);
   }
   exit(ctx) {}
   makeTile(c, r, elem) {
     const index = r * this._gridSize + c;
-    this._tiles[index] = new Tile(elem);
+    this._tiles[index] = new Tile(new P2(c, r), elem);
     return this._tiles[index];
   }
   getTile(c, r) {
@@ -117,7 +138,7 @@ class GameView {
     this.recentMessages.push(`clicked ${pos.name()}`);
     while (this.recentMessages.length > 10)
       this.recentMessages.shift();
-    this._infoElem.innerHTML = ``;
+    this._infoElem.innerHTML = `<h2>Info</h2>`;
     this.recentMessages.forEach((msg) => {
       this._infoElem.innerHTML += `
 				<p>${msg}</p>
@@ -129,7 +150,7 @@ class GameView {
     this.recentMessages.push(`drag ${start.name()} to ${end.name()}`);
     while (this.recentMessages.length > 10)
       this.recentMessages.shift();
-    this._infoElem.innerHTML = ``;
+    this._infoElem.innerHTML = `<h2>Info</h2>`;
     this.recentMessages.forEach((msg) => {
       this._infoElem.innerHTML += `
 				<p>${msg}</p>
@@ -166,7 +187,7 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260925_170005";
+var BuildTimestamp = "v20260925_172004";
 var BuildID = "banana";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
