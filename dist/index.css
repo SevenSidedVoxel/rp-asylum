@@ -44,41 +44,7 @@
 }
 
 /* src/styles/game-info.css */
-.game {
-  display: flex;
-  justify-content: center;
-  align-items:  center;
-  gap: 10px;
-  width: 100%;
-  height: 100%;
-  margin: 20px;
-}
 
-@media (orientation: portrait) {
-  .game {
-    flex-direction: column;
-    align-items:  flex-start;
-  }
-}
-
-.game-info {
-  background-color: var(--col-bg-panel);
-  border-radius: 8px;
-  flex: 1;
-  padding: 20px;
-}
-
-@media (orientation: portrait) {
-  .game-info {
-    width: calc(100vw - 80px);
-  }
-}
-
-@media (orientation: landscape) {
-  .game-info {
-    height: calc(min(100vw, 100dvh) - 80px);
-  }
-}
 
 /* src/styles/game.css */
 :root {
@@ -91,7 +57,55 @@
   --grid-size: 8;
 }
 
+.game {
+  display: flex;
+  justify-content: center;
+  align-items:  center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+@media (orientation: portrait) {
+  .game {
+    --game-size: calc(min(100vw, 100dvh));
+    --game-padding: 0px;
+    flex-direction: column;
+    align-items:  flex-start;
+  }
+}
+
+@media (orientation: landscape) {
+  .game {
+    --game-size: calc(min(100vw, 100dvh)  - 80px);
+    --game-padding: 20px;
+    margin: 20px;
+  }
+}
+
+.game-info {
+  background-color: var(--col-bg-panel);
+  border-radius: 8px;
+  flex: 1;
+  padding: 20px;
+}
+
+@media (orientation: portrait) {
+  .game-info {
+    width: var(--game-size);
+    max-height: calc(100% - var(--game-size)  - 50px);
+  }
+}
+
+@media (orientation: landscape) {
+  .game-info {
+    height: var(--game-size);
+  }
+}
+
 .game-board {
+  width: var(--game-size);
+  padding: var(--game-padding);
   aspect-ratio: 1;
   background-color: var(--col-bg-panel);
   display: grid;
@@ -103,8 +117,6 @@
   user-select: none;
   touch-action: none;
   border-radius: 8px;
-  width: calc(min(100vw, 100dvh) - 80px);
-  padding: 20px;
 }
 
 .tile {
@@ -172,10 +184,15 @@ html, body {
   margin: 0;
 }
 
+h2 {
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+
 #version {
   position: fixed;
   color: var(--col-text-muted);
-  opacity: .5;
+  opacity: .2;
   text-align: center;
   width: 100%;
   padding: 10px;

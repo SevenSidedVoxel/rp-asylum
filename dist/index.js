@@ -187,8 +187,8 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260925_172004";
-var BuildID = "banana";
+var BuildTimestamp = "v20260925_174258";
+var BuildID = "blueberry";
 document.addEventListener("DOMContentLoaded", () => {
   const footer = document.getElementById("version");
   footer.innerHTML = `${BuildID} - ${BuildTimestamp}`;
