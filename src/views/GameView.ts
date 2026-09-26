@@ -109,9 +109,7 @@ export class GameView implements IView {
 
 	clickTile(pos: P2) {
 		// console.log(`clicked ${pos.name()}`);
-		let tile = this.state.grid.getTile(pos);
-		this.state.setTileType(tile, TileTypes.House1);
-		this.state.applyRules();
+		this.state.placeTile(pos, TileTypes.House1);
 		this.applyAnims();
 	}
 	dragTile(start: P2, end: P2) {

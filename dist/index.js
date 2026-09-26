@@ -60,8 +60,9 @@ class GameState {
         break;
       default:
         console.warn(`Not Implemented: Placing tile ${TileTypes[type]} on ${pos.name()}`);
-        break;
+        return;
     }
+    this.applyRules();
   }
   static makeRules() {
     let rules = [];
@@ -447,9 +448,7 @@ class GameView {
   }
   exit(ctx) {}
   clickTile(pos) {
-    let tile = this.state.grid.getTile(pos);
-    this.state.setTileType(tile, 2 /* House1 */);
-    this.state.applyRules();
+    this.state.placeTile(pos, 2 /* House1 */);
     this.applyAnims();
   }
   dragTile(start, end) {}
@@ -501,7 +500,7 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260926_133346";
+var BuildTimestamp = "v20260926_133954";
 var BuildID = "buttercup";
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("content-root");

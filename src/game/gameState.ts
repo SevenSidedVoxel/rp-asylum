@@ -24,8 +24,10 @@ export class GameState {
 
 			default:
 				console.warn(`Not Implemented: Placing tile ${TileTypes[type]} on ${pos.name()}`);
-				break;
+				return;
 		}
+
+		this.applyRules();
 	}
 
 	static makeRules(): Rule[] {
