@@ -31,7 +31,6 @@ export class GameState {
 
 	public placeTile(tile: Tile, type: TileType) {
 		if (!this.canPlaceTile(tile, type)) {
-			this.createTile(tile, Tiles.Empty);
 			return;
 		}
 
