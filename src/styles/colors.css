@@ -1,35 +1,34 @@
+
+/* Auto-generated. Edit 'styles/_colors.json' instead */
+
 :root {
+	--col-white: #FEFEFE;
+	--col-black: #202020;
 	--col-good: #57a83b;
 	--col-bad: #9e3925;
-
-	--col-bg-dark: #0d0c0a;
-	--col-bg-panel: #151618;
-	--col-text-header: #c1c1cf;
-	--col-text-highlight: #e0d2d0;
-	--col-text-accent: #c5b6b4;
-	--col-text-default: #a6b3c4;
-	--col-text-muted: #778da6;
-	--col-text-good: color-mix(in srgb,
-			var(--col-text-default) 80%,
-			var(--col-good));
-	--col-text-bad: color-mix(in srgb,
-			var(--col-text-default) 80%,
-			var(--col-bad));
-	--col-shadow: rgba(0, 0, 0, 0.5);
-
+	--col-bgDark: #0d0c0a;
+	--col-bgPanel: #151618;
+	--col-textHeader: #c1c1cf;
+	--col-textHighlight: #e0d2d0;
+	--col-textAccent: #c5b6b4;
+	--col-textDefault: #a6b3c4;
+	--col-textMuted: #778da6;
+	--col-shadow: #00000080;
 	--col-border: #778da6;
-	--col-border-good: color-mix(in srgb,
-			var(--col-border) 60%,
-			var(--col-good));
-	--col-border-bad: color-mix(in srgb,
-			var(--col-border) 60%,
-			var(--col-bad));
-
-	--col-bg-btn: var(--col-bg-panel);
-	--col-bg-btn-hover: color-mix(in srgb,
-			var(--col-bg-btn) 90%,
-			white);
-
-	--font-heading: 'Playfair Display SC', serif;
-	--font-body: 'DM Serif Display', serif;
+	--col-bgBtn: #151618;
+	--col-bgBtnHover: #2c2d2f;
+	--col-tileLight: #272e3b;
+	--col-tileDark: #1d222b;
+	--col-tileBorder: #1d2831;
+	--col-tileHighlight: #1d2831;
+	--col-tileHighlight2: #204c45;
+	--col-tileHouse1: #73291b;
+	--col-tileHouse2: #9e3925;
+	--col-tileHouse3: #cf4a31;
+	--col-tileRoad1: #151533;
+	--col-tileRoad2: #222252;
+	--col-tileBridge: #182850;
+	--col-tileWater: #1a4a71;
+	--col-tileGrass: #2b6228;
+	--col-tileTree1: #40943d;
 }

@@ -1,23 +1,6 @@
 @import "./colors.css";
-@import "./credits.css";
 
 :root {
-	--col-tile-light: #272e3b;
-	--col-tile-dark: #1d222b;
-	--col-tile-border: #1d2831;
-	--col-tile-highlight: #1d2831;
-	--col-tile-highlight2: #204c45;
-
-	--col-tile-house1: #73291b;
-	--col-tile-house2: #9e3925;
-	--col-tile-house3: #cf4a31;
-	--col-tile-road1: #151533;
-	--col-tile-road2: #222252;
-	--col-tile-bridge: #182850;
-	--col-tile-water: #1a4a71;
-	--col-tile-grass: #2b6228;
-	--col-tile-tree1: #40943d;
-
 	--border-width: 2px;
 	--grid-size: 8;
 }
@@ -50,7 +33,7 @@
 .game-info {
 	flex: 1;
 
-	background-color: var(--col-bg-panel);
+	background-color: var(--col-bgPanel);
 	border-radius: 8px;
 	padding: 20px;
 
@@ -78,7 +61,7 @@
 
 	aspect-ratio: 1 / 1;
 
-	background-color: var(--col-bg-panel);
+	background-color: var(--col-bgPanel);
 	border-radius: 8px;
 
 	display: grid;
@@ -103,25 +86,25 @@
 	touch-action: none;
 }
 
-.tile-a {
-	background-color: var(--col-tile-light);
+.tileA {
+	background-color: var(--col-tileLight);
 }
 
-.tile-b {
-	background-color: var(--col-tile-dark);
+.tileB {
+	background-color: var(--col-tileDark);
 }
 
 .tile.highlight-col {
 	/* filter: brightness(1.1); */
-	/* border-left: var(--border-width) solid var(--col-tile-highlight);
-	border-right: var(--border-width) solid var(--col-tile-highlight); */
+	/* border-left: var(--border-width) solid var(--col-tileHighlight);
+	border-right: var(--border-width) solid var(--col-tileHighlight); */
 	/* z-index: 10; */
 }
 
 .tile.highlight-row {
 	/* filter: brightness(1.1); */
-	/* border-top: var(--border-width) solid var(--col-tile-highlight);
-	border-bottom: var(--border-width) solid var(--col-tile-highlight); */
+	/* border-top: var(--border-width) solid var(--col-tileHighlight);
+	border-bottom: var(--border-width) solid var(--col-tileHighlight); */
 	/* z-index: 10; */
 }
 
@@ -135,35 +118,35 @@
 	inset: -2px;
 	pointer-events: none;
 	background-color: inherit;
-	border: var(--border-width) solid var(--col-tile-highlight2);
+	border: var(--border-width) solid var(--col-tileHighlight2);
 }
 
 .tile[data-tile="House1"] {
-	background-color: var(--col-tile-house1);
+	background-color: var(--col-tileHouse1);
 }
 .tile[data-tile="House2"] {
-	background-color: var(--col-tile-house2);
+	background-color: var(--col-tileHouse2);
 }
 .tile[data-tile="House3"] {
-	background-color: var(--col-tile-house3);
+	background-color: var(--col-tileHouse3);
 }
 
 .tile[data-tile="Road"] {
-	background-color: var(--col-tile-road1);
+	background-color: var(--col-tileRoad1);
 }
 .tile[data-tile="Intersection"] {
-	background-color: var(--col-tile-road2);
+	background-color: var(--col-tileRoad2);
 }
 .tile[data-tile="Bridge"] {
-	background-color: var(--col-tile-bridge);
+	background-color: var(--col-tileBridge);
 }
 
 .tile[data-tile="Water"] {
-	background-color: var(--col-tile-water);
+	background-color: var(--col-tileWater);
 }
 .tile[data-tile="Grass"] {
-	background-color: var(--col-tile-grass);
+	background-color: var(--col-tileGrass);
 }
 .tile[data-tile="Tree"] {
-	background-color: var(--col-tile-tree1);
+	background-color: var(--col-tileTree1);
 }

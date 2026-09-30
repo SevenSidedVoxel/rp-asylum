@@ -28,7 +28,7 @@
 
 .credits-portrait {
 	max-width: var(--game-size);
-	background-color: var(--col-bg-panel);
+	background-color: var(--col-bgPanel);
 	border-radius: 8px;
 	width: 100%;
 

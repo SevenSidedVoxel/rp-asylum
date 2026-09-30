@@ -1,48 +1,25 @@
 import { BuildID, BuildTimestamp } from "..";
 import { IView, AppCtx } from "../AppCtx";
-import { P2 } from "../game/coords";
-import { GameState, TileTypes } from "../game/gameState";
-
-function getPosFromTileElem(tile: Element | null | undefined) {
-	if (!tile) return;
-	const xData = tile.getAttribute('data-col');
-	const yData = tile.getAttribute('data-row');
-	if (!xData || !yData)
-		return;
-	return new P2(parseInt(xData, 10), parseInt(yData, 10));
-}
+import { P2 } from "../game/P2";
+import { Frame } from "../game/Frame";
+import { GameAnim } from "../game/GameAnims";
+import { GameState, Tiles } from "../game/GameState";
+import { GameRenderer } from "../game/GameRenderer";
 
 export class GameView implements IView {
-	private _ctx: AppCtx;
-	private _boardElem: HTMLElement | null | undefined;
-	private _infoElem: HTMLElement | null | undefined;
+	private ctx: AppCtx;
+	private boardElem: HTMLElement | null | undefined;
+	private infoElem: HTMLElement | null | undefined;
+	private scoreElem: HTMLElement | null | undefined;
 
-	private state: GameState = new GameState();
+	private game: GameState = new GameState();
+	private renderer: GameRenderer = this.game.renderer;
 
 	public constructor(ctx: AppCtx) {
-		this._ctx = ctx;
+		this.ctx = ctx;
 	}
 
 	enter(ctx: AppCtx): void {
-		let gridHtml = ``;
-		const size = this.state.grid.size - 2;
-		for (let r = 0; r < size; ++r) {
-			const row = size - (r + 1);
-			const y = row + 1;
-
-			for (let c = 0; c < size; ++c) {
-				const tileAB = (row % 2 + c) % 2 ? 'a' : 'b';
-				const x = c + 1;
-
-				gridHtml += /*html*/`<div
-					id="tile_${x}_${y}"
-					class="tile tile-${tileAB} tile-row${y} tile-col${x}"
-					data-row=${y}
-					data-col=${x}>
-				</div>`;
-			}
-		}
-
 		const creditsHtml =/*html*/`
 <p class="credit">Developed by SevenSidedVoxel</p>
 <a class="kofi-link" href='https://ko-fi.com/C5L027OU2F' target='_blank'>
@@ -57,13 +34,13 @@ export class GameView implements IView {
 <div class="game">
 	<section id="gameInfo" class="game-info">
 		<h2>Tum Town</h2>
+		<p id="score">Score: <span>0</span></p>
 
 		<div class="credits-landscape">
 			${creditsHtml}
 		</div>
 	</section>
 	<section id="gameBoard" class="game-board">
-		${gridHtml}
 	</section>
 	<section id="gameCredits" class="credits-portrait">
 		${creditsHtml}
@@ -71,77 +48,74 @@ export class GameView implements IView {
 </div>
 		`;
 
-		this._boardElem = ctx.root.querySelector("#gameBoard");
-		if (this._boardElem == null) return;
+		this.boardElem = ctx.root.querySelector("#gameBoard");
+		if (this.boardElem == null) return;
 
-		this._infoElem = ctx.root.querySelector("#gameInfo");
-		if (this._infoElem == null) return;
+		// Setup renderer
+		this.renderer.setupAsync(this.boardElem, this.game);
 
-		for (let y = 1; y < size + 1; ++y) {
-			for (let x = 1; x < size + 1; ++x) {
-				const tileElem = this._boardElem.querySelector(`#tile_${x}_${y}`);
-				if (!tileElem) continue;
-				const pos = new P2(x, y);
-				const tile = this.state.grid.getTile(pos);
-				tile.Elem = tileElem;
-				tile.Elem.addEventListener('mouseenter', () => this.hoverTileStart(pos));
-				tile.Elem.addEventListener('mouseleave', () => this.hoverTileEnd(pos));
-			}
-		}
+		this.infoElem = ctx.root.querySelector("#gameInfo");
+		if (this.infoElem == null) return;
 
-		this._boardElem.addEventListener('pointerdown', (e) => {
-			const tile = (e.target as HTMLElement).closest('.tile');
-			var pos = getPosFromTileElem(tile);
-			if (pos !== undefined)
-				this.pressTileStart(pos);
-		});
-		this._boardElem.addEventListener('pointerup', (e) => {
-			const elem = document.elementFromPoint(e.clientX, e.clientY);
-			const tile = elem?.closest('.tile');
-			var pos = getPosFromTileElem(tile);
-			if (pos !== undefined)
-				this.pressTileEnd(pos);
-		});
-		this._boardElem.addEventListener('pointercancel', this.pressTileCancel);
+		this.scoreElem = this.infoElem.querySelector("#score>span");
+		if (this.scoreElem == null) return;
+
+		window.addEventListener('pointermove', this.handlePointerMove);
+		window.addEventListener('pointerdown', this.handlePointerDown);
+		window.addEventListener('pointerup', this.handlePointerUp);
+		window.addEventListener('pointercancel', this.handlePointerCancel);
+
+		this.loop(0);
 	}
 
 	exit(ctx): void { }
 
+	private prevTimestamp: DOMHighResTimeStamp = 0;
+	loop(timestamp: DOMHighResTimeStamp) {
+		const rawDelta = timestamp - this.prevTimestamp;
+		const safeDelta = Math.min(rawDelta, 0.1);
+		this.prevTimestamp = timestamp;
+		let frame = new Frame(timestamp, safeDelta);
+
+		this.updateAnims(safeDelta);
+		this.renderer.draw(frame);
+
+		requestAnimationFrame(timestamp => this.loop(timestamp));
+	}
+
 	clickTile(pos: P2) {
 		// console.log(`clicked ${pos.name()}`);
-		this.state.placeTile(pos, TileTypes.House1);
-		this.applyAnims();
+		const tile = this.game.grid.getTile(pos);
+		if (!this.game.canPlaceTile(tile, Tiles.House1)) {
+			// Anims.showInvalidAct(tile.Elem);
+			return;
+		}
+
+		this.game.placeTile(tile, Tiles.House1);
+		this.updateVisuals();
 	}
 	dragTile(start: P2, end: P2) {
 		// console.log(`drag ${start.name()} to ${end.name()}`);
 	}
 
+	private hoverPos: P2 | null = null;
 	hoverTileStart(pos: P2) {
-		this._boardElem?.
-			querySelectorAll(`.tile-row${pos.y}`)?.
-			forEach(tile => tile.classList.add('highlight-row'));
-		this._boardElem?.
-			querySelectorAll(`.tile-col${pos.x}`)?.
-			forEach(tile => tile.classList.add('highlight-col'));
-		this._boardElem?.
-			querySelector(`#tile_${pos.x}_${pos.y}`)?.
-			classList.add('highlight');
+		this.hoverPos = pos;
+		const tile = this.game.grid.getTile(this.hoverPos);
+		this.renderer.hoverTile(tile);
 	}
-	hoverTileEnd(pos: P2) {
-		this.clearHighlighting();
-	}
-
-	clearHighlighting() {
-		this._boardElem?.
-			querySelectorAll(`.tile`)?.
-			forEach(tile => tile.classList.remove('highlight', 'highlight-row', 'highlight-col'));
+	hoverTileEnd() {
+		this.hoverPos = null;
+		this.renderer.hoverTile(null);
 	}
 
 	//#region Visual State
 
 	private _applyingAnims = false;
 	private _fastApplyAnims = false;
-	applyAnims() {
+	updateVisuals() {
+		this.updateScore();
+
 		if (this._applyingAnims) {
 			this._fastApplyAnims = true;
 			return;
@@ -149,47 +123,91 @@ export class GameView implements IView {
 		this._applyingAnims = true;
 		this.applyNextAnim();
 	}
+
+	private anims: GameAnim[] = [];
+	updateAnims(deltaTime: number) {
+		if (!this._applyingAnims)
+			return;
+
+		if (this._fastApplyAnims)
+			deltaTime *= 2;
+
+		for(const anim of this.anims)
+			anim.update(deltaTime);
+		this.anims = this.anims.filter(anim => !anim.isDone());
+
+		if (this.anims.length < 1)
+			this.applyNextAnim();
+	}
 	private applyNextAnim() {
-		if (this.state.anims.length < 1) {
+		if (this.game.anims.length < 1) {
 			this._applyingAnims = false;
 			this._fastApplyAnims = false;
 			return;
 		}
 
-		const anim = this.state.anims.shift();
-		anim?.act();
+		const anim = this.game.anims.shift()!;
+		this.anims.push(anim);
+	}
 
-		// Delay before the next anim
-		const delayMS = this._fastApplyAnims ? 65 : 150;
-		setTimeout(() => {
-			this.applyNextAnim();
-		}, delayMS);
+	updateScore() {
+		this.scoreElem!.innerHTML = `${this.game.score}`;
 	}
 
 	//#endregion Visual State
 
 	//#region Pointer Handlers
 
-	private _pressTileData: P2 | null = null;
-	pressTileStart(coord: P2) {
-		this._pressTileData = coord;
+	private uiPos: P2 | null = null;
+	private worldPos: P2 | null = null;
+	private gridPos: P2 | null = null;
+
+	private startPressedTile: P2 | null = null;
+
+	handlePointerMove = (e) => {
+		this.uiPos = new P2(e.clientX, e.clientY);
+		this.worldPos = this.renderer.uiToWorld(this.uiPos);
+		this.gridPos = this.worldPos?.rounded() ?? null;
+
+		if (this.hoverPos !== this.gridPos) {
+			this.hoverTileEnd();
+			if (this.gridPos)
+				this.hoverTileStart(this.gridPos);
+		}
 	}
-	pressTileEnd(pos: P2) {
-		if (this._pressTileData === null)
+
+	handlePointerDown = (e) => {
+		if (!this.gridPos) return;
+		this.startPressTile(this.gridPos);
+	}
+
+	handlePointerUp = (e) => {
+		if (this.gridPos)
+			this.endPressTile(this.gridPos);
+		else
+			this.startPressedTile = null;
+	}
+
+	handlePointerCancel = (e) => {
+		this.startPressedTile = null;
+	}
+
+	startPressTile(coord: P2) {
+		this.startPressedTile = coord;
+	}
+	endPressTile(pos: P2) {
+		if (this.startPressedTile === null)
 			return; // press was cancelled or moved off tile
 
-		if (this._pressTileData.x !== pos.x
-			|| this._pressTileData.y !== pos.y) {
+		if (this.startPressedTile.x !== pos.x
+			|| this.startPressedTile.y !== pos.y) {
 			// this is a drag
-			this.dragTile(this._pressTileData, pos);
+			this.dragTile(this.startPressedTile, pos);
 		}
 		else
 			this.clickTile(pos);
 
-		this._pressTileData = null;
-	}
-	pressTileCancel() {
-		this._pressTileData = null;
+		this.startPressedTile = null;
 	}
 
 	//#endregion Pointer Handlers

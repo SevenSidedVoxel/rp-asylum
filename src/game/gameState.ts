@@ -1,5 +1,9 @@
-import { P2 } from "./coords";
-import { GameAnim } from "./gameAnims";
+import { Colors } from "../styles/colors";
+import { P2 } from "./P2";
+import { Anims, GameAnim } from "./GameAnims";
+import { Tile } from "./Tile";
+import { GameRenderer } from "./GameRenderer";
+import { color3 } from "../utils/threeUtils";
 
 export class GameState {
 	public score: number = 0;
@@ -10,35 +14,50 @@ export class GameState {
 	public rules: Rule[] = GameState.makeRules();
 	public items: Item[] = [];
 	public anims: GameAnim[] = [];
+	public isCreative = true;
 
-	public placeTile(pos: P2, type: TileTypes) {
-		const tile = this.grid.getTile(pos);
+	public renderer: GameRenderer = new GameRenderer();
+
+	public canPlaceTile(tile: Tile, type: TileType) {
+		return true;
+		// Ensure the tile is available
+		if (!this.isCreative && !this.hasItem(type))
+			return false; // no item
+
+		if (tile.type !== Tiles.Empty)
+			return false; // not empty
+
+		return true;
+	}
+
+	public placeTile(tile: Tile, type: TileType) {
+		if (!this.canPlaceTile(tile, type)) {
+			this.createTile(tile, Tiles.Empty);
+			return;
+		}
+
+		this.consumeItem(type);
+
 		switch (type) {
-			case TileTypes.House1:
-				if (tile.type !== TileTypes.Empty)
-					return; // not empty
-				this.setTileType(tile, type);
+			case Tiles.House1:
+				this.createTile(tile, type);
 				this.addScore(tile, 1);
 				this.addPop(tile, 1);
 				break;
 
-			case TileTypes.Grass:
-				if (tile.type !== TileTypes.Empty)
-					return; // not empty
-				this.setTileType(tile, type);
+			case Tiles.Grass:
+				this.createTile(tile, type);
 				this.addScore(tile, 1);
 				this.addNat(tile, 1);
 				break;
 
-			case TileTypes.Road:
-				if (tile.type !== TileTypes.Empty)
-					return; // not empty
-				this.setTileType(tile, type);
+			case Tiles.Road:
+				this.createTile(tile, type);
 				this.addScore(tile, 1);
 				break;
 
 			default:
-				console.warn(`Not Implemented: Placing tile ${TileTypes[type]} on ${pos.name()}`);
+				console.warn(`Not Implemented: Placing tile ${type.name} on ${tile.pos.name()}`);
 				return;
 		}
 
@@ -50,88 +69,74 @@ export class GameState {
 
 		rules.push(new Rule("Make Cull-de-sac",
 			{
-				cc: TileTypes.Road,
-				tc: TileTypes.House1,
-				cl: TileTypes.House1,
-				bc: TileTypes.House1,
+				cc: Tiles.Road,
+				tc: Tiles.House1,
+				cl: Tiles.House1,
+				bc: Tiles.House1,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.House2);
-				game.setTileType(area.tc, TileTypes.Empty);
-				game.setTileType(area.cl, TileTypes.Empty);
-				game.setTileType(area.bc, TileTypes.Empty);
+				game.mergeTilesInto(area.cc,
+					[area.tc, area.bc, area.cl],
+					Tiles.House2);
 				game.addScore(area.cc, 3);
 			},
 			MatchFlags.Rotate4));
 
 		rules.push(new Rule("Add Road between Houses",
 			{
-				cc: TileTypes.Empty,
-				tc: TileTypes.House1,
-				bc: TileTypes.House1,
+				cc: Tiles.Empty,
+				tc: Tiles.House1,
+				bc: Tiles.House1,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.Road);
+				game.createTile(area.cc, Tiles.Road);
 				game.addScore(area.cc, 1);
 			},
 			MatchFlags.Rotate1));
 
-		rules.push(new Rule("Make Apartment I",
+		rules.push(new Rule("Make Building",
 			{
-				cc: TileTypes.House2,
-				tc: TileTypes.House1,
-				bc: TileTypes.House1,
+				cc: Tiles.House2,
+				tc: Tiles.House1,
+				bc: Tiles.House1,
+				cl: Tiles.House1,
+				cr: Tiles.House1,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.House3);
-				game.setTileType(area.tc, TileTypes.Empty);
-				game.setTileType(area.bc, TileTypes.Empty);
+				game.mergeTilesInto(area.cc,
+					[area.tc, area.bc, area.cl, area.cr],
+					Tiles.House3);
 				game.addScore(area.cc, 4);
 				game.addPop(area.cc, 4);
 			},
-			MatchFlags.Rotate1));
-
-		rules.push(new Rule("Make Apartment L",
-			{
-				cc: TileTypes.House2,
-				tc: TileTypes.House1,
-				cl: TileTypes.House1,
-			},
-			(game, area) => {
-				game.setTileType(area.cc, TileTypes.House3);
-				game.setTileType(area.tc, TileTypes.Empty);
-				game.setTileType(area.cl, TileTypes.Empty);
-				game.addScore(area.cc, 4);
-				game.addPop(area.cc, 4);
-			},
-			MatchFlags.Rotate4));
+			MatchFlags.None));
 
 		rules.push(new Rule("Make Intersection",
 			{
-				cc: TileTypes.Road,
-				tc: TileTypes.Road,
-				bc: TileTypes.Road,
-				cl: TileTypes.Road,
-				cr: TileTypes.Road,
+				cc: Tiles.Road,
+				tc: Tiles.Road,
+				bc: Tiles.Road,
+				cl: Tiles.Road,
+				cr: Tiles.Road,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.Intersection);
+				game.createTile(area.cc, Tiles.Intersection);
 				game.addScore(area.cc, 4);
 			},
 			MatchFlags.Rotate1));
 
 		rules.push(new Rule("Make Tree",
 			{
-				cc: TileTypes.Grass,
-				tc: TileTypes.Grass,
-				tl: TileTypes.Grass,
-				cl: TileTypes.Grass,
+				cc: Tiles.Grass,
+				tc: Tiles.Grass,
+				tl: Tiles.Grass,
+				cl: Tiles.Grass,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.Tree);
-				game.setTileType(area.tc, TileTypes.Empty);
-				game.setTileType(area.tl, TileTypes.Empty);
-				game.setTileType(area.cl, TileTypes.Empty);
+				game.createTile(area.cc, Tiles.Tree);
+				game.createTile(area.tc, Tiles.Empty);
+				game.createTile(area.tl, Tiles.Empty);
+				game.createTile(area.cl, Tiles.Empty);
 				game.addScore(area.cc, 4);
 				game.addNat(area.cc, 2);
 			},
@@ -139,23 +144,29 @@ export class GameState {
 
 		rules.push(new Rule("Make Pond",
 			{
-				cc: TileTypes.Empty,
-				tc: TileTypes.Grass,
-				tl: TileTypes.Grass,
-				cl: TileTypes.Grass,
-				cr: TileTypes.Grass,
+				cc: Tiles.Empty,
+				tc: Tiles.Grass,
+				tl: Tiles.Grass,
+				cl: Tiles.Grass,
+				cr: Tiles.Grass,
 			},
 			(game, area) => {
-				game.setTileType(area.cc, TileTypes.Water);
-				game.setTileType(area.tc, TileTypes.Empty);
-				game.setTileType(area.tl, TileTypes.Empty);
-				game.setTileType(area.cl, TileTypes.Empty);
-				game.setTileType(area.cr, TileTypes.Empty);
+				game.createTile(area.cc, Tiles.Water);
+				game.createTile(area.tc, Tiles.Empty);
+				game.createTile(area.tl, Tiles.Empty);
+				game.createTile(area.cl, Tiles.Empty);
+				game.createTile(area.cr, Tiles.Empty);
 				game.addScore(area.cc, 2);
 			},
 			MatchFlags.None));
 
 		return rules;
+	}
+
+	public addAnim(anim: GameAnim | undefined) {
+		if (!anim) return;
+		this.anims.push(anim);
+		return anim;
 	}
 
 	//#region State Modification
@@ -172,28 +183,65 @@ export class GameState {
 		this.nature += n;
 	}
 
-	private setTileType(tile: Tile, type: TileTypes) {
+	private setTileType(tile: Tile, type: TileType) {
 		if (tile.type === type)
 			return;
 
-		console.log(`Setting ${tile.pos.name()} to '${TileTypes[type]}'`);
+		console.log(`Setting ${tile.pos.name()} to '${type.name}'`);
 		tile.type = type;
 
 		this.markForCheck(tile.pos.x, tile.pos.y);
 		this.markAdjForCheck(tile.pos);
+	}
 
-		if (tile.Elem) {
-			this.anims.push(new GameAnim(() => {
-				tile.Elem!.setAttribute('data-tile', TileTypes[type]);
-			}));
+	private createTile(tile: Tile, type: TileType) {
+		this.setTileType(tile, type);
+		if (tile.type.animCreate)
+			this.addAnim(tile.type.animCreate(this, tile));
+	}
+
+
+	private mergeTilesInto(
+		targetTile: Tile,
+		tiles: Tile[],
+		type: TileType) {
+		// Update Data
+		for (const tile of tiles)
+			this.setTileType(tile, Tiles.Empty);
+		this.setTileType(targetTile, type);
+
+		// Update Visuals
+		if (!targetTile.draw) return;
+
+		// Merge adjacent tiles
+		const targetPos = targetTile.draw.pos;
+		let anims: GameAnim[] = [];
+		for (const tile of tiles) {
+			if (!tile.draw) continue;
+			anims.push(tile.draw
+				.mergeModelsInto(targetPos, Anims.BaseDur));
 		}
+
+		const delay = 0.25 * Anims.BaseDur;
+
+		// Destroy center tile
+		anims.push(targetTile.draw
+			.destroyAllModels(Anims.BaseDur)
+			.delayed(delay));
+
+		// Create center tile
+		const createAnim = type.animCreate?.(this, targetTile);
+		if (createAnim)
+			anims.push(createAnim.delayed(delay));
+
+		this.addAnim(Anims.combined(anims));
 	}
 
 	//#endregion State Modification
 
 	//#region Items
 
-	public addItem(type: TileTypes, count?: number) {
+	public addItem(type: TileType, count?: number) {
 		count ??= 1;
 		for (const item of this.items) {
 			if (item.type === type) {
@@ -203,6 +251,32 @@ export class GameState {
 		}
 
 		this.items.push(new Item(type, count));
+	}
+
+	private hasItem(type: TileType) {
+		for (const item of this.items) {
+			if (item.type === type
+				&& item.count > 0)
+				return true;
+		}
+
+		return false;
+	}
+
+	private consumeItem(type: TileType) {
+		if (this.isCreative)
+			return;
+
+		for (const [index, item] of this.items.entries()) {
+			if (item.type !== type)
+				continue;
+
+			item.count--;
+			if (item.count < 1)
+				this.items.splice(index, 1);
+
+			return;
+		}
 	}
 
 	//#endregion Items
@@ -221,7 +295,6 @@ export class GameState {
 			// console.log(`To Check ${tile.pos.name()}`);
 
 			tile.shouldCheck = true;
-			tile.Elem?.setAttribute('data-check', '');
 			this.tilesToCheck++;
 		}
 	}
@@ -242,7 +315,6 @@ export class GameState {
 		// console.log(`Checked ${tile.pos.name()}`);
 
 		tile.shouldCheck = false;
-		tile.Elem?.removeAttribute('data-check');
 		this.tilesToCheck--;
 	}
 
@@ -338,36 +410,96 @@ export class GameState {
 	//#endregion Rule Application
 }
 
-export enum TileTypes {
-	Any,
-	Empty,
+export type TileType = {
+	name: string,
+	color?: number;
+	animCreate?: (game: GameState, tile: Tile) => GameAnim | undefined;
+};
+export const Tiles = {
+	Any: { name: "any" },
+	Empty: {
+		name: "empty",
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			return tile.draw.destroyAllModels(game);
+		}
+	},
 
-	House1,
-	House2,
-	House3,
+	House1: {
+		name: "house1",
+		color: Colors.tileHouse1,
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			const pos = tile.pos;
+			const model = game.renderer.addMeshToTile(
+				tile,
+				game.renderer.assets.model_House1,
+				pos,
+				new color3(this.color)
+			);
+			return Anims.createModel(model, 1, 1);
+		}
+	},
+	House2: {
+		name: "house2",
+		color: Colors.tileHouse2,
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			const pos = tile.pos;
+			const model = game.renderer.addMeshToTile(
+				tile,
+				game.renderer.assets.model_House2,
+				pos,
+				new color3(this.color)
+			);
+			return Anims.createModel(model, 1, 1);
+		}
+	},
+	House3: {
+		name: "house3",
+		color: Colors.tileHouse3,
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			const pos = tile.pos;
+			const model = game.renderer.addMeshToTile(
+				tile,
+				game.renderer.assets.model_House3,
+				pos,
+				new color3(this.color)
+			);
+			return Anims.createModel(model, 1, 1);
+		}
+	},
 
-	Road,
-	Intersection,
-	Bridge,
+	Road: {
+		name: "road1",
+		color: Colors.tileRoad1,
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			const pos = tile.pos;
+			const model = game.renderer.addMeshToTile(
+				tile,
+				game.renderer.assets.model_Intersection1,
+				pos,
+				new color3(this.color)
+			);
+			return Anims.createModel(model, 1, 1);
+		}
+	},
+	Intersection: { name: "road2", color: Colors.tileRoad2 },
+	Bridge: { name: "bridge", color: Colors.tileBridge },
 
-	Grass,
-	Tree,
-	Water,
-}
-function isTile(pattern: TileTypes, type: TileTypes): boolean {
-	return pattern === TileTypes.Any || pattern === type;
+	Grass: { name: "grass", color: Colors.tileGrass },
+	Tree: { name: "tree", color: Colors.tileTree1 },
+	Water: { name: "water", color: Colors.tileWater },
+} as const satisfies Record<string, TileType>;
+
+function isTile(pattern: TileType, type: TileType): boolean {
+	return pattern === Tiles.Any || pattern === type;
 }
 
 export class Item {
-	constructor(public type: TileTypes, public count: number) { }
-}
-
-export class Tile {
-	public shouldCheck: boolean = false;
-	public Elem: Element | null = null;
-
-	constructor(public pos: P2, public type: TileTypes) {
-	}
+	constructor(public type: TileType, public count: number) { }
 }
 
 class Grid {
@@ -379,7 +511,7 @@ class Grid {
 		for (let y = 0; y < this.size; ++y) {
 			for (let x = 0; x < this.size; ++x) {
 				this.tiles[y * this.size + x] = new Tile(
-					new P2(x, y), TileTypes.Empty);
+					new P2(x, y), Tiles.Empty);
 			}
 		}
 	}
@@ -393,32 +525,32 @@ class Grid {
 		return this.tiles[y! * this.size + xOrPos]!;
 	}
 
-	public getTileType(x: number, y: number): TileTypes;
-	public getTileType(pos: P2): TileTypes;
-	public getTileType(xOrPos: number | P2, y?: number): TileTypes {
+	public getTileType(x: number, y: number): TileType;
+	public getTileType(pos: P2): TileType;
+	public getTileType(xOrPos: number | P2, y?: number): TileType {
 		const x = typeof xOrPos === 'object' ? xOrPos.x : xOrPos;
 		const py = typeof xOrPos === 'object' ? xOrPos.y : y!;
 
 		if (x < 0 || x >= this.size || py < 0 || py >= this.size)
-			return TileTypes.Empty;
+			return Tiles.Empty;
 		return this.tiles[py * this.size + x]!.type;
 	}
 
 	public isTileEmpty(pos: P2) {
-		return this.getTileType(pos) === TileTypes.Empty;
+		return this.getTileType(pos) === Tiles.Empty;
 	}
 }
 
 export class Match3x3 {
-	public tl: TileTypes = TileTypes.Any;
-	public tc: TileTypes = TileTypes.Any;
-	public tr: TileTypes = TileTypes.Any;
-	public cl: TileTypes = TileTypes.Any;
-	public cc: TileTypes = TileTypes.Empty;
-	public cr: TileTypes = TileTypes.Any;
-	public bl: TileTypes = TileTypes.Any;
-	public bc: TileTypes = TileTypes.Any;
-	public br: TileTypes = TileTypes.Any;
+	public tl: TileType = Tiles.Any;
+	public tc: TileType = Tiles.Any;
+	public tr: TileType = Tiles.Any;
+	public cl: TileType = Tiles.Any;
+	public cc: TileType = Tiles.Empty;
+	public cr: TileType = Tiles.Any;
+	public bl: TileType = Tiles.Any;
+	public bc: TileType = Tiles.Any;
+	public br: TileType = Tiles.Any;
 
 	constructor(init?: Partial<Match3x3>) {
 		Object.assign(this, init);

@@ -1,7 +1,7 @@
 @import "./colors.css";
 
 .menu-ctr {
-	background-color: var(--col-bg-panel);
+	background-color: var(--col-bgPanel);
 
 	padding: 40px;
 	padding-top: 20px;

@@ -1,0 +1,35 @@
+{
+	"white": "#FEFEFE",
+	"black": "#202020",
+
+	"good": "#57a83b",
+	"bad": "#9e3925",
+	"bgDark": "#0d0c0a",
+	"bgPanel": "#151618",
+	"textHeader": "#c1c1cf",
+	"textHighlight": "#e0d2d0",
+	"textAccent": "#c5b6b4",
+	"textDefault": "#a6b3c4",
+	"textMuted": "#778da6",
+	"shadow": "#00000080",
+	"border": "#778da6",
+
+	"bgBtn": "#151618",
+	"bgBtnHover": "#2c2d2f",
+
+	"tileLight": "#272e3b",
+	"tileDark": "#1d222b",
+	"tileBorder": "#1d2831",
+	"tileHighlight": "#1d2831",
+	"tileHighlight2": "#204c45",
+
+	"tileHouse1": "#73291b",
+	"tileHouse2": "#9e3925",
+	"tileHouse3": "#cf4a31",
+	"tileRoad1": "#151533",
+	"tileRoad2": "#222252",
+	"tileBridge": "#182850",
+	"tileWater": "#1a4a71",
+	"tileGrass": "#2b6228",
+	"tileTree1": "#40943d"
+}

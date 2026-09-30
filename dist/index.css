@@ -1,6 +1,12 @@
+/* src/styles/fonts.css */
+:root {
+  --font-heading: "Playfair Display SC", serif;
+  --font-body: "DM Serif Display", serif;
+}
+
 /* src/styles/menu.css */
 .menu-ctr {
-  background-color: var(--col-bg-panel);
+  background-color: var(--col-bgPanel);
   border-radius: 8px;
   padding: 20px 40px 40px;
 }
@@ -20,91 +26,8 @@
   padding: 0 20px;
 }
 
-/* src/styles/colors.css */
-:root {
-  --col-good: #57a83b;
-  --col-bad: #9e3925;
-  --col-bg-dark: #0d0c0a;
-  --col-bg-panel: #151618;
-  --col-text-header: #c1c1cf;
-  --col-text-highlight: #e0d2d0;
-  --col-text-accent: #c5b6b4;
-  --col-text-default: #a6b3c4;
-  --col-text-muted: #778da6;
-  --col-text-good: color-mix(in srgb, var(--col-text-default) 80%, var(--col-good));
-  --col-text-bad: color-mix(in srgb, var(--col-text-default) 80%, var(--col-bad));
-  --col-shadow: #00000080;
-  --col-border: #778da6;
-  --col-border-good: color-mix(in srgb, var(--col-border) 60%, var(--col-good));
-  --col-border-bad: color-mix(in srgb, var(--col-border) 60%, var(--col-bad));
-  --col-bg-btn: var(--col-bg-panel);
-  --col-bg-btn-hover: color-mix(in srgb, var(--col-bg-btn) 90%, white);
-  --font-heading: "Playfair Display SC", serif;
-  --font-body: "DM Serif Display", serif;
-}
-
-/* src/styles/credits.css */
-.credits-landscape, .credits-portrait {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items:  center;
-  margin-top: auto;
-}
-
-@media (orientation: portrait) {
-  .credits-landscape {
-    display: none;
-  }
-}
-
-.credit {
-  margin: 10px;
-}
-
-.version {
-  opacity: .2;
-  margin-top: 0;
-  margin-bottom: 5px;
-  font-size: 10px;
-}
-
-.credits-portrait {
-  max-width: var(--game-size);
-  background-color: var(--col-bg-panel);
-  border-radius: 8px;
-  width: 100%;
-}
-
-@media (orientation: landscape) {
-  .credits-portrait {
-    display: none;
-  }
-}
-
-.kofi-link {
-  width: -moz-fit-content;
-  width: fit-content;
-  height: -moz-fit-content;
-  height: fit-content;
-}
-
 /* src/styles/game.css */
 :root {
-  --col-tile-light: #272e3b;
-  --col-tile-dark: #1d222b;
-  --col-tile-border: #1d2831;
-  --col-tile-highlight: #1d2831;
-  --col-tile-highlight2: #204c45;
-  --col-tile-house1: #73291b;
-  --col-tile-house2: #9e3925;
-  --col-tile-house3: #cf4a31;
-  --col-tile-road1: #151533;
-  --col-tile-road2: #222252;
-  --col-tile-bridge: #182850;
-  --col-tile-water: #1a4a71;
-  --col-tile-grass: #2b6228;
-  --col-tile-tree1: #40943d;
   --border-width: 2px;
   --grid-size: 8;
 }
@@ -136,7 +59,7 @@
 }
 
 .game-info {
-  background-color: var(--col-bg-panel);
+  background-color: var(--col-bgPanel);
   display: flex;
   border-radius: 8px;
   flex-direction: column;
@@ -163,7 +86,7 @@
   height: var(--game-size);
   padding: var(--game-padding);
   aspect-ratio: 1;
-  background-color: var(--col-bg-panel);
+  background-color: var(--col-bgPanel);
   display: grid;
   grid-template-columns: repeat(var(--grid-size), 1fr);
   grid-template-rows: repeat(var(--grid-size), 1fr);
@@ -184,12 +107,12 @@
   touch-action: none;
 }
 
-.tile-a {
-  background-color: var(--col-tile-light);
+.tileA {
+  background-color: var(--col-tileLight);
 }
 
-.tile-b {
-  background-color: var(--col-tile-dark);
+.tileB {
+  background-color: var(--col-tileDark);
 }
 
 .tile.highlight {
@@ -201,54 +124,177 @@
   position: absolute;
   pointer-events: none;
   background-color: inherit;
-  border: var(--border-width) solid var(--col-tile-highlight2);
+  border: var(--border-width) solid var(--col-tileHighlight2);
   inset: -2px;
 }
 
 .tile[data-tile="House1"] {
-  background-color: var(--col-tile-house1);
+  background-color: var(--col-tileHouse1);
 }
 
 .tile[data-tile="House2"] {
-  background-color: var(--col-tile-house2);
+  background-color: var(--col-tileHouse2);
 }
 
 .tile[data-tile="House3"] {
-  background-color: var(--col-tile-house3);
+  background-color: var(--col-tileHouse3);
 }
 
 .tile[data-tile="Road"] {
-  background-color: var(--col-tile-road1);
+  background-color: var(--col-tileRoad1);
 }
 
 .tile[data-tile="Intersection"] {
-  background-color: var(--col-tile-road2);
+  background-color: var(--col-tileRoad2);
 }
 
 .tile[data-tile="Bridge"] {
-  background-color: var(--col-tile-bridge);
+  background-color: var(--col-tileBridge);
 }
 
 .tile[data-tile="Water"] {
-  background-color: var(--col-tile-water);
+  background-color: var(--col-tileWater);
 }
 
 .tile[data-tile="Grass"] {
-  background-color: var(--col-tile-grass);
+  background-color: var(--col-tileGrass);
 }
 
 .tile[data-tile="Tree"] {
-  background-color: var(--col-tile-tree1);
+  background-color: var(--col-tileTree1);
 }
 
-/* src/style.css */
+/* src/styles/credits.css */
+.credits-landscape, .credits-portrait {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items:  center;
+  margin-top: auto;
+}
+
+@media (orientation: portrait) {
+  .credits-landscape {
+    display: none;
+  }
+}
+
+.credit {
+  margin: 10px;
+}
+
+.version {
+  opacity: .2;
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+.credits-portrait {
+  max-width: var(--game-size);
+  background-color: var(--col-bgPanel);
+  border-radius: 8px;
+  width: 100%;
+}
+
+@media (orientation: landscape) {
+  .credits-portrait {
+    display: none;
+  }
+}
+
+.kofi-link {
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
+}
+
+/* src/styles/colors.css */
 :root {
-  color: var(--col-text-default);
+  --col-white: #fefefe;
+  --col-black: #202020;
+  --col-good: #57a83b;
+  --col-bad: #9e3925;
+  --col-bgDark: #0d0c0a;
+  --col-bgPanel: #151618;
+  --col-textHeader: #c1c1cf;
+  --col-textHighlight: #e0d2d0;
+  --col-textAccent: #c5b6b4;
+  --col-textDefault: #a6b3c4;
+  --col-textMuted: #778da6;
+  --col-shadow: #00000080;
+  --col-border: #778da6;
+  --col-bgBtn: #151618;
+  --col-bgBtnHover: #2c2d2f;
+  --col-tileLight: #272e3b;
+  --col-tileDark: #1d222b;
+  --col-tileBorder: #1d2831;
+  --col-tileHighlight: #1d2831;
+  --col-tileHighlight2: #204c45;
+  --col-tileHouse1: #73291b;
+  --col-tileHouse2: #9e3925;
+  --col-tileHouse3: #cf4a31;
+  --col-tileRoad1: #151533;
+  --col-tileRoad2: #222252;
+  --col-tileBridge: #182850;
+  --col-tileWater: #1a4a71;
+  --col-tileGrass: #2b6228;
+  --col-tileTree1: #40943d;
+}
+
+/* src/styles/anims.css */
+.tile-anim {
+  position: absolute;
+  z-index: 200;
+  display: flex;
+  pointer-events: none;
+  overflow: hidden;
+  color: #fff;
+  justify-content: center;
+  align-items:  center;
+  width: 100%;
+  height: 100%;
+  font-size: 3em;
+  top: 0;
+  left: 0;
+}
+
+.anim-invalidX > span {
+  display: inline-block;
+  animation: growHoldShrink .5s ease-in-out forwards;
+}
+
+@keyframes growHoldShrink {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  10% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+/* src/index.css */
+:root {
+  color: var(--col-textDefault);
   font-family: var(--font-body);
 }
 
 html, body {
-  background-color: var(--col-bg-dark);
+  background-color: var(--col-bgDark);
   overflow: hidden;
   position: fixed;
   width: 100vw;
@@ -263,7 +309,7 @@ h2 {
 
 #version {
   position: fixed;
-  color: var(--col-text-muted);
+  color: var(--col-textMuted);
   opacity: .2;
   text-align: center;
   width: 100%;
@@ -306,7 +352,7 @@ h2 {
 
 .sections-item {
   aspect-ratio: 1;
-  background-color: var(--col-bg-panel);
+  background-color: var(--col-bgPanel);
   box-shadow: 0 6px 6px var(--col-shadow);
   display: flex;
   border-radius: 8px;
@@ -336,27 +382,27 @@ h2 {
 }
 
 .accent {
-  color: var(--col-text-accent);
+  color: var(--col-textAccent);
 }
 
 .default {
-  color: var(--col-text-default);
+  color: var(--col-textDefault);
 }
 
 .muted {
-  color: var(--col-text-muted);
+  color: var(--col-textMuted);
 }
 
 .good {
-  color: var(--col-text-good);
+  color: var(--col-textGood);
 }
 
 .bad {
-  color: var(--col-text-bad);
+  color: var(--col-textBad);
 }
 
 h2, .head {
-  color: var(--col-text-header);
+  color: var(--col-textHeader);
   font-family: var(--font-heading);
   text-align: center;
   text-shadow: 0 2px 4px var(--col-shadow);
@@ -365,9 +411,9 @@ h2, .head {
 }
 
 button {
-  background-color: var(--col-bg-btn);
-  color: var(--col-text-accent);
-  border: 1px solid var(--col-text-accent);
+  background-color: var(--col-bgBtn);
+  color: var(--col-textAccent);
+  border: 1px solid var(--col-textAccent);
   cursor: pointer;
   border-radius: 6px;
   padding: 10px 18px;
@@ -377,9 +423,9 @@ button {
 }
 
 button.btn:hover {
-  background-color: var(--col-bg-btn-hover);
-  border-color: var(--col-text-highlight);
-  color: var(--col-text-highlight);
+  background-color: var(--col-bgBtnHover);
+  border-color: var(--col-textHighlight);
+  color: var(--col-textHighlight);
 }
 
 button:active {
@@ -387,8 +433,8 @@ button:active {
 }
 
 .input {
-  background-color: var(--col-bg-dark);
-  color: var(--col-text-good);
+  background-color: var(--col-bgDark);
+  color: var(--col-textGood);
   border: 1px solid var(--col-border);
   box-sizing: border-box;
   border-radius: 6px;
