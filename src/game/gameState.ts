@@ -19,7 +19,6 @@ export class GameState {
 	public renderer: GameRenderer = new GameRenderer();
 
 	public canPlaceTile(tile: Tile, type: TileType) {
-		return true;
 		// Ensure the tile is available
 		if (!this.isCreative && !this.hasItem(type))
 			return false; // no item
