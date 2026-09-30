@@ -65,6 +65,22 @@ export class GameState {
 	static makeRules(): Rule[] {
 		let rules: Rule[] = [];
 
+		rules.push(new Rule("Make Building",
+			{
+				cc: Tiles.House2,
+				tc: Tiles.House1,
+				bc: Tiles.House1,
+				cl: Tiles.House1,
+				cr: Tiles.House1,
+			},
+			(game, area) => {
+				game.mergeTilesInto(area.cc,
+					[area.tc, area.bc, area.cl, area.cr],
+					Tiles.House3);
+				game.addScore(area.cc, 4);
+				game.addPop(area.cc, 4);
+			},
+			MatchFlags.None));
 		rules.push(new Rule("Make Cull-de-sac",
 			{
 				cc: Tiles.Road,
@@ -92,24 +108,32 @@ export class GameState {
 			},
 			MatchFlags.Rotate1));
 
-		rules.push(new Rule("Make Building",
+		rules.push(new Rule("Make Intersection T",
 			{
-				cc: Tiles.House2,
-				tc: Tiles.House1,
-				bc: Tiles.House1,
-				cl: Tiles.House1,
-				cr: Tiles.House1,
+				cc: Tiles.Empty,
+				tc: Tiles.Road,
+				bc: Tiles.Road,
+				cl: Tiles.Road,
 			},
 			(game, area) => {
-				game.mergeTilesInto(area.cc,
-					[area.tc, area.bc, area.cl, area.cr],
-					Tiles.House3);
+				game.createTile(area.cc, Tiles.Intersection);
 				game.addScore(area.cc, 4);
-				game.addPop(area.cc, 4);
+			},
+			MatchFlags.Rotate4));
+		rules.push(new Rule("Make Intersection",
+			{
+				cc: Tiles.Empty,
+				tc: Tiles.Road,
+				bc: Tiles.Road,
+				cl: Tiles.Road,
+				cr: Tiles.Road,
+			},
+			(game, area) => {
+				game.createTile(area.cc, Tiles.Intersection);
+				game.addScore(area.cc, 4);
 			},
 			MatchFlags.None));
-
-		rules.push(new Rule("Make Intersection",
+		rules.push(new Rule("Upgrade Intersection",
 			{
 				cc: Tiles.Road,
 				tc: Tiles.Road,
@@ -121,7 +145,7 @@ export class GameState {
 				game.createTile(area.cc, Tiles.Intersection);
 				game.addScore(area.cc, 4);
 			},
-			MatchFlags.Rotate1));
+			MatchFlags.None));
 
 		rules.push(new Rule("Make Tree",
 			{
@@ -419,7 +443,7 @@ export const Tiles = {
 		name: "empty",
 		animCreate(game, tile) {
 			if (!tile.draw) return;
-			return tile.draw.destroyAllModels(game);
+			return tile.draw.destroyAllModels(Anims.BaseDur);
 		}
 	},
 
@@ -484,7 +508,21 @@ export const Tiles = {
 			return Anims.createModel(model, 1, 1);
 		}
 	},
-	Intersection: { name: "road2", color: Colors.tileRoad2 },
+	Intersection: {
+		name: "road2",
+		color: Colors.tileRoad2,
+		animCreate(game, tile) {
+			if (!tile.draw) return;
+			const pos = tile.pos;
+			const model = game.renderer.addMeshToTile(
+				tile,
+				game.renderer.assets.model_Intersection1,
+				pos,
+				new color3(this.color)
+			);
+			return Anims.createModel(model, 1, 1);
+		}
+	},
 	Bridge: { name: "bridge", color: Colors.tileBridge },
 
 	Grass: { name: "grass", color: Colors.tileGrass },

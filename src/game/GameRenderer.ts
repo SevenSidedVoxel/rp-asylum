@@ -71,6 +71,7 @@ export class GameRenderer {
 			this.resize(width, height);
 		});
 		this.resizeObserver.observe(ctr);
+		this.renderer.domElement.style.touchAction = 'none';
 		ctr.appendChild(this.renderer.domElement);
 
 		// Load Resources
@@ -107,7 +108,7 @@ export class GameRenderer {
 		const glbBuffer = await glbFetch.arrayBuffer();
 		const gltf = await loader.parseAsync(glbBuffer, '');
 
-		const maxInstances = 128;
+		const maxInstances = 1024;
 		const maxVertexCount = 10000;
 		const maxIndexCount = 20000;
 
@@ -173,6 +174,7 @@ export class GameRenderer {
 		});
 		{
 			const matrix = new mat4x4();
+			const position = new float3();
 			for (let y = 0; y < this.gridSize; ++y) {
 				for (let x = 0; x < this.gridSize; ++x) {
 					// Initialize the tile
@@ -180,7 +182,9 @@ export class GameRenderer {
 					const tileInst = this.drawBatch.addInstance(this.assets.model_TileBG);
 
 					tile.draw = new TileDraw(x, y, tileInst);
-					matrix.makeTranslation(tile.draw.pos);
+					position.copy(tile.draw.pos);
+					position.z = -0.01;
+					matrix.makeTranslation(position);
 
 					this.drawBatch.setMatrixAt(tileInst, matrix);
 					this.drawBatch.setColorAt(tileInst, tile.draw.baseColor);
@@ -192,7 +196,7 @@ export class GameRenderer {
 		// Hover Model
 		{
 			this.hoverMesh = this.addModel(
-				this.assets.model_Hover,
+				this.assets.model_House1,
 				new float3(0, 0, 0),
 				1,
 				new color3(Colors.white));
@@ -204,12 +208,12 @@ export class GameRenderer {
 	public hoverTile(tile: Tile | null) {
 		if (!this.hoverMesh)
 			return;
-
+		
 		if (!tile?.draw) {
 			this.hoverMesh.setVisible(false);
 			return;
 		}
-
+		
 		const pos = tile.draw.pos;
 		this.hoverMesh.setPosition(pos.x, pos.y, pos.z);
 		this.hoverMesh.setVisible(true);

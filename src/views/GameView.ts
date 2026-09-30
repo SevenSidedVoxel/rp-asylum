@@ -132,7 +132,7 @@ export class GameView implements IView {
 		if (this._fastApplyAnims)
 			deltaTime *= 2;
 
-		for(const anim of this.anims)
+		for (const anim of this.anims)
 			anim.update(deltaTime);
 		this.anims = this.anims.filter(anim => !anim.isDone());
 
@@ -177,6 +177,7 @@ export class GameView implements IView {
 	}
 
 	handlePointerDown = (e) => {
+		this.handlePointerMove(e);
 		if (!this.gridPos) return;
 		this.startPressTile(this.gridPos);
 	}

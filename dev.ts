@@ -35,7 +35,7 @@ async function buildProject() {
 		entrypoints: [`${SRC_DIR}/index.html`],
 		outdir: DIST_DIR,
 		minify: false,
-		sourcemap: "inline",
+		sourcemap: "external",
 		naming: {
 			entry: "[name].[ext]",
 			chunk: "[name].[ext]",
