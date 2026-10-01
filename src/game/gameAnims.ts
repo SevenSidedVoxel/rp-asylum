@@ -1,7 +1,8 @@
-import { float3 } from "../utils/threeUtils";
+import { float3, quat4 } from "../utils/threeUtils";
 import { BatchedInstance } from "./GameRenderer";
 import { GameState } from "./GameState";
 import { lerp } from "./P2";
+import * as THREE from 'three';
 
 export class GameAnim {
 	private static _nextID = 0;
@@ -38,11 +39,13 @@ export class GameAnim {
 export namespace Anims {
 	export const BaseDur = 1;
 
-	export function combined(anims: GameAnim[]) {
+	export function combined(anims: (GameAnim | undefined)[]) {
 		// Get the maximum duration
 		let duration = 0;
-		for (const anim of anims)
+		for (const anim of anims) {
+			if (!anim) continue;
 			duration = Math.max(anim.delay + anim.duration);
+		}
 
 		return new GameAnim(function (dt) {
 			for (let i = 0; i < anims.length; ++i) {
@@ -58,13 +61,62 @@ export namespace Anims {
 		}, duration);
 	}
 
-	export function createModel(model: BatchedInstance, targetSize: number, duration: number): GameAnim {
+	export function growModel(model: BatchedInstance, targetSize: number, duration: number): GameAnim {
 		const initialSize = 0;
 		return new GameAnim(function () {
 			const [t, s] = this.lil();
 			model.setScale(lerp(initialSize, targetSize, t));
 		}, duration);
 	}
+	export function growModelTowards(
+		model: BatchedInstance,
+		targetPos: float3,
+		targetSize: number,
+		duration: number): GameAnim {
+		const initPos = model.position.clone();
+		const initScale = model.scale.clone();
+		const targetScale = new float3(targetSize, targetSize, targetSize);
+		return new GameAnim(function () {
+			const [t, s] = this.lil();
+			const l = t;
+
+			// Move
+			model.position.copy(initPos);
+			model.position.lerp(targetPos, l);
+
+			// Grow
+			model.scale.copy(initScale);
+			model.scale.lerp(targetScale, l);
+
+			// Flush
+			model.updateMatrix();
+		}, duration);
+	}
+	export function growModelTRS(
+		model: BatchedInstance,
+		targetPos: float3,
+		targetRot: quat4,
+		targetScale: float3,
+		duration: number): GameAnim {
+		const initPos = model.position.clone();
+		const initRot = model.rotation.clone();
+		const initScale = model.scale.clone();
+		return new GameAnim(function () {
+			const [t, s] = this.lil();
+			const l = t;
+
+			model.position.copy(initPos);
+			model.position.lerp(targetPos, l);
+			model.rotation.copy(targetRot);
+			// model.rotation.slerp(targetRot, l);
+			model.scale.copy(initScale);
+			model.scale.lerp(targetScale, l);
+
+			// Flush
+			model.updateMatrix();
+		}, duration);
+	}
+
 	export function destroyModel(model: BatchedInstance, duration: number): GameAnim {
 		const initialSize = model.scale.x;
 		return new GameAnim(function () {

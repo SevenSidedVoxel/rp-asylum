@@ -1,9 +1,9 @@
-import { Colors } from "../styles/colors";
 import { P2 } from "./P2";
 import { Anims, GameAnim } from "./GameAnims";
-import { Tile } from "./Tile";
+import { makeRules, Tiles, TileType, Tile } from "./Tile";
 import { GameRenderer } from "./GameRenderer";
-import { color3 } from "../utils/threeUtils";
+import { RandomSlice } from "./SeededRandom";
+import { Area3x3, isTile, MatchFlags, Rule } from "./Rule";
 
 export class GameState {
 	public score: number = 0;
@@ -11,179 +11,16 @@ export class GameState {
 	public nature: number = 0;
 
 	public grid: Grid = new Grid();
-	public rules: Rule[] = GameState.makeRules();
+	public rules: Rule[] = makeRules();
 	public items: Item[] = [];
 	public anims: GameAnim[] = [];
+	public rng = new RandomSlice(Math.random(), 1024);
 	public isCreative = true;
 
 	public renderer: GameRenderer = new GameRenderer();
+	public get assets() { return this.renderer.assets; }
 
-	public canPlaceTile(tile: Tile, type: TileType) {
-		// Ensure the tile is available
-		if (!this.isCreative && !this.hasItem(type))
-			return false; // no item
-
-		if (tile.type !== Tiles.Empty)
-			return false; // not empty
-
-		return true;
-	}
-
-	public placeTile(tile: Tile, type: TileType) {
-		if (!this.canPlaceTile(tile, type)) {
-			return;
-		}
-
-		this.consumeItem(type);
-
-		switch (type) {
-			case Tiles.House1:
-				this.createTile(tile, type);
-				this.addScore(tile, 1);
-				this.addPop(tile, 1);
-				break;
-
-			case Tiles.Grass:
-				this.createTile(tile, type);
-				this.addScore(tile, 1);
-				this.addNat(tile, 1);
-				break;
-
-			case Tiles.Road:
-				this.createTile(tile, type);
-				this.addScore(tile, 1);
-				break;
-
-			default:
-				console.warn(`Not Implemented: Placing tile ${type.name} on ${tile.pos.name()}`);
-				return;
-		}
-
-		this.applyRules();
-	}
-
-	static makeRules(): Rule[] {
-		let rules: Rule[] = [];
-
-		rules.push(new Rule("Make Building",
-			{
-				cc: Tiles.House2,
-				tc: Tiles.House1,
-				bc: Tiles.House1,
-				cl: Tiles.House1,
-				cr: Tiles.House1,
-			},
-			(game, area) => {
-				game.mergeTilesInto(area.cc,
-					[area.tc, area.bc, area.cl, area.cr],
-					Tiles.House3);
-				game.addScore(area.cc, 4);
-				game.addPop(area.cc, 4);
-			},
-			MatchFlags.None));
-		rules.push(new Rule("Make Cull-de-sac",
-			{
-				cc: Tiles.Road,
-				tc: Tiles.House1,
-				cl: Tiles.House1,
-				bc: Tiles.House1,
-			},
-			(game, area) => {
-				game.mergeTilesInto(area.cc,
-					[area.tc, area.bc, area.cl],
-					Tiles.House2);
-				game.addScore(area.cc, 3);
-			},
-			MatchFlags.Rotate4));
-
-		rules.push(new Rule("Add Road between Houses",
-			{
-				cc: Tiles.Empty,
-				tc: Tiles.House1,
-				bc: Tiles.House1,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Road);
-				game.addScore(area.cc, 1);
-			},
-			MatchFlags.Rotate1));
-
-		rules.push(new Rule("Make Intersection T",
-			{
-				cc: Tiles.Empty,
-				tc: Tiles.Road,
-				bc: Tiles.Road,
-				cl: Tiles.Road,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Intersection);
-				game.addScore(area.cc, 4);
-			},
-			MatchFlags.Rotate4));
-		rules.push(new Rule("Make Intersection",
-			{
-				cc: Tiles.Empty,
-				tc: Tiles.Road,
-				bc: Tiles.Road,
-				cl: Tiles.Road,
-				cr: Tiles.Road,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Intersection);
-				game.addScore(area.cc, 4);
-			},
-			MatchFlags.None));
-		rules.push(new Rule("Upgrade Intersection",
-			{
-				cc: Tiles.Road,
-				tc: Tiles.Road,
-				bc: Tiles.Road,
-				cl: Tiles.Road,
-				cr: Tiles.Road,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Intersection);
-				game.addScore(area.cc, 4);
-			},
-			MatchFlags.None));
-
-		rules.push(new Rule("Make Tree",
-			{
-				cc: Tiles.Grass,
-				tc: Tiles.Grass,
-				tl: Tiles.Grass,
-				cl: Tiles.Grass,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Tree);
-				game.createTile(area.tc, Tiles.Empty);
-				game.createTile(area.tl, Tiles.Empty);
-				game.createTile(area.cl, Tiles.Empty);
-				game.addScore(area.cc, 4);
-				game.addNat(area.cc, 2);
-			},
-			MatchFlags.None));
-
-		rules.push(new Rule("Make Pond",
-			{
-				cc: Tiles.Empty,
-				tc: Tiles.Grass,
-				tl: Tiles.Grass,
-				cl: Tiles.Grass,
-				cr: Tiles.Grass,
-			},
-			(game, area) => {
-				game.createTile(area.cc, Tiles.Water);
-				game.createTile(area.tc, Tiles.Empty);
-				game.createTile(area.tl, Tiles.Empty);
-				game.createTile(area.cl, Tiles.Empty);
-				game.createTile(area.cr, Tiles.Empty);
-				game.addScore(area.cc, 2);
-			},
-			MatchFlags.None));
-
-		return rules;
-	}
+	//#region Visuals
 
 	public addAnim(anim: GameAnim | undefined) {
 		if (!anim) return;
@@ -191,17 +28,32 @@ export class GameState {
 		return anim;
 	}
 
+	public regenVisuals() {
+		for (const tile of this.grid.tiles) {
+			if (!tile.shouldRegen) continue;
+			tile.shouldRegen = false;
+
+			if (!tile.draw || !tile.type.animRegen)
+				continue;
+
+			const anim = tile.type.animRegen(this, tile);
+			if (anim) this.anims.push(anim);
+		}
+	}
+
+	//#endregion Visuals
+
 	//#region State Modification
 
-	private addScore(tile: Tile, s: number) {
+	public addScore(tile: Tile, s: number) {
 		this.score += s;
 	}
 
-	private addPop(tile: Tile, p: number) {
+	public addPop(tile: Tile, p: number) {
 		this.population += p;
 	}
 
-	private addNat(tile: Tile, n: number) {
+	public addNat(tile: Tile, n: number) {
 		this.nature += n;
 	}
 
@@ -216,14 +68,29 @@ export class GameState {
 		this.markAdjForCheck(tile.pos);
 	}
 
-	private createTile(tile: Tile, type: TileType) {
+	public replaceTile(tile: Tile, type: TileType) {
+		if (type == Tiles.Empty || tile.type == Tiles.Empty) {
+			// Tile is already empty or becoming empty,
+			//   so just use a single animation
+			this.setTileType(tile, type);
+			if (tile.type.animCreate)
+				this.addAnim(tile.type.animCreate(this, tile));
+			return;
+		}
+
+		// Update Data
 		this.setTileType(tile, type);
-		if (tile.type.animCreate)
-			this.addAnim(tile.type.animCreate(this, tile));
+
+		// Animate the replacement of tile models
+		if (tile.type.animCreate) {
+			this.addAnim(Anims.combined([
+				Tiles.Empty.animCreate(this, tile),
+				tile.type.animCreate(this, tile)
+			]));
+		}
 	}
 
-
-	private mergeTilesInto(
+	public mergeTilesInto(
 		targetTile: Tile,
 		tiles: Tile[],
 		type: TileType) {
@@ -305,6 +172,28 @@ export class GameState {
 
 	//#region Rule Application
 
+	public canPlaceTile(tile: Tile, type: TileType) {
+		// Ensure the tile is available
+		if (!this.isCreative && !this.hasItem(type))
+			return false; // no item
+
+		if (tile.type !== Tiles.Empty)
+			return false; // not empty
+
+		return true;
+	}
+
+	public placeTile(tile: Tile, type: TileType) {
+		if (!this.canPlaceTile(tile, type)) {
+			return;
+		}
+
+		this.consumeItem(type);
+		this.replaceTile(tile, type);
+		this.applyRules();
+		this.regenVisuals();
+	}
+
 	private tilesToCheck: number = 0;
 
 	public markForCheck(x: number, y: number) {
@@ -317,6 +206,7 @@ export class GameState {
 			// console.log(`To Check ${tile.pos.name()}`);
 
 			tile.shouldCheck = true;
+			tile.shouldRegen = true;
 			this.tilesToCheck++;
 		}
 	}
@@ -340,12 +230,17 @@ export class GameState {
 		this.tilesToCheck--;
 	}
 
+	public get hasUnappliedRules() { return this.tilesToCheck > 0; }
+
 	public applyRules() {
-		while (this.tilesToCheck > 0)
+		while (this.hasUnappliedRules)
 			this.applyRulesOnce();
 	}
 
 	public applyRulesOnce() {
+		if (!this.hasUnappliedRules)
+			return;
+
 		let ruleIndex = Number.MAX_SAFE_INTEGER;
 		let ruleToApply: Rule | null = null;
 		let areaToApply: Area3x3 | null = null;
@@ -375,7 +270,7 @@ export class GameState {
 			for (const [index, rule] of this.rules.entries()) {
 				if (index >= ruleIndex) {
 					examinedAllRules = false;
-					continue; // A matched rule is better
+					break; // A matched rule is better
 				}
 
 				if (!isTile(rule.match.cc, cc.type))
@@ -383,6 +278,7 @@ export class GameState {
 
 				// Try matching the rule
 				if (rule.match.isMatch(rot000)) {
+					examinedAllRules = false;
 					ruleToApply = rule;
 					areaToApply = rot000;
 					ruleIndex = index;
@@ -392,6 +288,7 @@ export class GameState {
 				// Try matching rotations of the rule
 				if (rule.matchFlags & MatchFlags.Rotate1) {
 					if (rule.match.isMatch(rot090)) {
+						examinedAllRules = false;
 						ruleToApply = rule;
 						areaToApply = rot090;
 						ruleIndex = index;
@@ -401,6 +298,7 @@ export class GameState {
 
 				if (rule.matchFlags & MatchFlags.Rotate4) {
 					if (rule.match.isMatch(rot180)) {
+						examinedAllRules = false;
 						ruleToApply = rule;
 						areaToApply = rot180;
 						ruleIndex = index;
@@ -408,6 +306,7 @@ export class GameState {
 					}
 
 					if (rule.match.isMatch(rot270)) {
+						examinedAllRules = false;
 						ruleToApply = rule;
 						areaToApply = rot270;
 						ruleIndex = index;
@@ -432,108 +331,6 @@ export class GameState {
 	//#endregion Rule Application
 }
 
-export type TileType = {
-	name: string,
-	color?: number;
-	animCreate?: (game: GameState, tile: Tile) => GameAnim | undefined;
-};
-export const Tiles = {
-	Any: { name: "any" },
-	Empty: {
-		name: "empty",
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			return tile.draw.destroyAllModels(Anims.BaseDur);
-		}
-	},
-
-	House1: {
-		name: "house1",
-		color: Colors.tileHouse1,
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			const pos = tile.pos;
-			const model = game.renderer.addMeshToTile(
-				tile,
-				game.renderer.assets.model_House1,
-				pos,
-				new color3(this.color)
-			);
-			return Anims.createModel(model, 1, 1);
-		}
-	},
-	House2: {
-		name: "house2",
-		color: Colors.tileHouse2,
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			const pos = tile.pos;
-			const model = game.renderer.addMeshToTile(
-				tile,
-				game.renderer.assets.model_House2,
-				pos,
-				new color3(this.color)
-			);
-			return Anims.createModel(model, 1, 1);
-		}
-	},
-	House3: {
-		name: "house3",
-		color: Colors.tileHouse3,
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			const pos = tile.pos;
-			const model = game.renderer.addMeshToTile(
-				tile,
-				game.renderer.assets.model_House3,
-				pos,
-				new color3(this.color)
-			);
-			return Anims.createModel(model, 1, 1);
-		}
-	},
-
-	Road: {
-		name: "road1",
-		color: Colors.tileRoad1,
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			const pos = tile.pos;
-			const model = game.renderer.addMeshToTile(
-				tile,
-				game.renderer.assets.model_Intersection1,
-				pos,
-				new color3(this.color)
-			);
-			return Anims.createModel(model, 1, 1);
-		}
-	},
-	Intersection: {
-		name: "road2",
-		color: Colors.tileRoad2,
-		animCreate(game, tile) {
-			if (!tile.draw) return;
-			const pos = tile.pos;
-			const model = game.renderer.addMeshToTile(
-				tile,
-				game.renderer.assets.model_Intersection1,
-				pos,
-				new color3(this.color)
-			);
-			return Anims.createModel(model, 1, 1);
-		}
-	},
-	Bridge: { name: "bridge", color: Colors.tileBridge },
-
-	Grass: { name: "grass", color: Colors.tileGrass },
-	Tree: { name: "tree", color: Colors.tileTree1 },
-	Water: { name: "water", color: Colors.tileWater },
-} as const satisfies Record<string, TileType>;
-
-function isTile(pattern: TileType, type: TileType): boolean {
-	return pattern === Tiles.Any || pattern === type;
-}
-
 export class Item {
 	constructor(public type: TileType, public count: number) { }
 }
@@ -541,6 +338,8 @@ export class Item {
 class Grid {
 	public size: number = 10;
 	public tiles: Tile[];
+
+	private _emptyTile: Tile = new Tile(new P2(-1, -1), Tiles.Empty);
 
 	constructor() {
 		this.tiles = Array(this.size * this.size);
@@ -552,24 +351,29 @@ class Grid {
 		}
 	}
 
-	public getTile(x: number, y: number): Tile;
-	public getTile(pos: P2): Tile;
-	public getTile(xOrPos: number | P2, y?: number): Tile {
-		if (typeof xOrPos === 'object') {
-			return this.tiles[xOrPos.y * this.size + xOrPos.x]!;
-		}
-		return this.tiles[y! * this.size + xOrPos]!;
+	public getTileOffset(pos: P2, x: number, y: number): Tile {
+		return this.getTile(pos.x + x, pos.y + y);
 	}
 
-	public getTileType(x: number, y: number): TileType;
-	public getTileType(pos: P2): TileType;
-	public getTileType(xOrPos: number | P2, y?: number): TileType {
-		const x = typeof xOrPos === 'object' ? xOrPos.x : xOrPos;
-		const py = typeof xOrPos === 'object' ? xOrPos.y : y!;
+	public getTile(pos: P2): Tile;
+	public getTile(x: number, y: number): Tile;
+	public getTile(xOrPos: number | P2, y?: number): Tile {
+		if (typeof xOrPos === 'object')
+			return this.getTileInternal(xOrPos.x, xOrPos.y);
+		return this.getTileInternal(xOrPos, y!);
+	}
+	private getTileInternal(x: number, y: number): Tile {
+		if (x < 0 || x >= this.size || y < 0 || y >= this.size)
+			return this._emptyTile;
+		return this.tiles[y * this.size + x]!;
+	}
 
-		if (x < 0 || x >= this.size || py < 0 || py >= this.size)
-			return Tiles.Empty;
-		return this.tiles[py * this.size + x]!.type;
+	public getTileType(pos: P2): TileType;
+	public getTileType(x: number, y: number): TileType;
+	public getTileType(xOrPos: number | P2, y?: number): TileType {
+		if (typeof xOrPos === 'object')
+			return this.getTileInternal(xOrPos.x, xOrPos.y).type;
+		return this.getTileInternal(xOrPos, y!).type;
 	}
 
 	public isTileEmpty(pos: P2) {
@@ -577,73 +381,3 @@ class Grid {
 	}
 }
 
-export class Match3x3 {
-	public tl: TileType = Tiles.Any;
-	public tc: TileType = Tiles.Any;
-	public tr: TileType = Tiles.Any;
-	public cl: TileType = Tiles.Any;
-	public cc: TileType = Tiles.Empty;
-	public cr: TileType = Tiles.Any;
-	public bl: TileType = Tiles.Any;
-	public bc: TileType = Tiles.Any;
-	public br: TileType = Tiles.Any;
-
-	constructor(init?: Partial<Match3x3>) {
-		Object.assign(this, init);
-	}
-
-	public isMatch(area: Area3x3): boolean {
-		// The center should be checked already
-		return isTile(this.tc, area.tc.type)
-			&& isTile(this.cr, area.cr.type)
-			&& isTile(this.bc, area.bc.type)
-			&& isTile(this.cl, area.cl.type)
-			&& isTile(this.tl, area.tl.type)
-			&& isTile(this.tr, area.tr.type)
-			&& isTile(this.br, area.br.type)
-			&& isTile(this.bl, area.bl.type);
-	}
-}
-
-type TileArray3x3 = [Tile, Tile, Tile, Tile, Tile, Tile, Tile, Tile, Tile];
-
-export class Area3x3 {
-	constructor(
-		public tl: Tile, public tc: Tile, public tr: Tile,
-		public cl: Tile, public cc: Tile, public cr: Tile,
-		public bl: Tile, public bc: Tile, public br: Tile
-	) { }
-
-	public static create(tiles: TileArray3x3) {
-		return new Area3x3(...tiles);
-	}
-}
-
-enum MatchFlags {
-	None = 0x0,
-
-	/** Check against the 0° and 90° rotations */
-	Rotate1 = 0x1,
-
-	/** Check against the 0°, 90°, 180° and 270° rotations */
-	Rotate4 = 0x2 | Rotate1,
-}
-
-export class Rule {
-	public name: string;
-	public match: Match3x3;
-	public matchFlags: MatchFlags;
-	public apply: (game: GameState, area: Area3x3) => void;
-
-	constructor(
-		name: string,
-		match: Partial<Match3x3>,
-		apply: (game: GameState, area: Area3x3) => void,
-		matchFlags?: MatchFlags
-	) {
-		this.name = name;
-		this.match = new Match3x3(match);
-		this.matchFlags = matchFlags ?? MatchFlags.Rotate1;
-		this.apply = apply;
-	}
-}

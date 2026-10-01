@@ -3,8 +3,9 @@ import { IView, AppCtx } from "../AppCtx";
 import { P2 } from "../game/P2";
 import { Frame } from "../game/Frame";
 import { GameAnim } from "../game/GameAnims";
-import { GameState, Tiles } from "../game/GameState";
+import { GameState } from "../game/GameState";
 import { GameRenderer } from "../game/GameRenderer";
+import { Tiles } from "../game/Tile";
 
 export class GameView implements IView {
 	private ctx: AppCtx;
@@ -64,6 +65,7 @@ export class GameView implements IView {
 		window.addEventListener('pointerdown', this.handlePointerDown);
 		window.addEventListener('pointerup', this.handlePointerUp);
 		window.addEventListener('pointercancel', this.handlePointerCancel);
+		window.addEventListener('keydown', this.handleKeyPress);
 
 		this.loop(0);
 	}
@@ -92,7 +94,7 @@ export class GameView implements IView {
 		}
 
 		this.game.placeTile(tile, Tiles.House1);
-		this.updateVisuals();
+		this.playNextAnim();
 	}
 	dragTile(start: P2, end: P2) {
 		// console.log(`drag ${start.name()} to ${end.name()}`);
@@ -113,15 +115,10 @@ export class GameView implements IView {
 
 	private _applyingAnims = false;
 	private _fastApplyAnims = false;
-	updateVisuals() {
-		this.updateScore();
-
+	speedUpAnims() {
 		if (this._applyingAnims) {
 			this._fastApplyAnims = true;
-			return;
 		}
-		this._applyingAnims = true;
-		this.applyNextAnim();
 	}
 
 	private anims: GameAnim[] = [];
@@ -137,15 +134,17 @@ export class GameView implements IView {
 		this.anims = this.anims.filter(anim => !anim.isDone());
 
 		if (this.anims.length < 1)
-			this.applyNextAnim();
+			this.playNextAnim();
 	}
-	private applyNextAnim() {
+	private playNextAnim() {
 		if (this.game.anims.length < 1) {
+			// Animations are over
 			this._applyingAnims = false;
 			this._fastApplyAnims = false;
 			return;
 		}
 
+		this._applyingAnims = true;
 		const anim = this.game.anims.shift()!;
 		this.anims.push(anim);
 	}
@@ -156,13 +155,50 @@ export class GameView implements IView {
 
 	//#endregion Visual State
 
-	//#region Pointer Handlers
+	//#region Input Handlers
 
 	private uiPos: P2 | null = null;
 	private worldPos: P2 | null = null;
 	private gridPos: P2 | null = null;
 
 	private startPressedTile: P2 | null = null;
+
+	private stateDebugAnim: number | undefined;
+
+	handleKeyPress = (e: KeyboardEvent) => {
+		switch (e.code) {
+			case 'Comma':
+				if (this.stateDebugAnim) {
+					cancelAnimationFrame(this.stateDebugAnim);
+					this.stateDebugAnim = undefined;
+				}
+				else {
+					const debugFrame = () => {
+						for (const tile of this.game.grid.tiles) {
+							const centerPos = tile.getCenterPos();
+
+							if (tile.shouldCheck)
+								this.game.renderer.addFloatingDebugText(
+									'*', centerPos.setX(centerPos.x + 0.1), '#086820');
+
+							if (tile.shouldRegen)
+								this.game.renderer.addFloatingDebugText(
+									'*', centerPos.setX(centerPos.x + 0.1), '#88a01f');
+						}
+
+						// Request next frame (if not been cancelled)
+						if (this.stateDebugAnim)
+							this.stateDebugAnim = requestAnimationFrame(debugFrame);
+					};
+
+					this.stateDebugAnim = requestAnimationFrame(debugFrame);
+				}
+				break;
+
+			default:
+				break;
+		}
+	};
 
 	handlePointerMove = (e) => {
 		this.uiPos = new P2(e.clientX, e.clientY);
@@ -211,5 +247,5 @@ export class GameView implements IView {
 		this.startPressedTile = null;
 	}
 
-	//#endregion Pointer Handlers
+	//#endregion Input Handlers
 }

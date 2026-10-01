@@ -12,6 +12,7 @@ import { Tile, TileDraw } from './Tile';
 import { BatchedMesh } from 'three';
 import { Colors } from '../styles/colors';
 import { color3, float2, float3, float4, mat4x4, quat4 } from "../utils/threeUtils";
+import { Anims, GameAnim } from './GameAnims';
 
 class RenderAssets {
 	public matDefault: THREE.Material | undefined;
@@ -22,7 +23,11 @@ class RenderAssets {
 	public model_House1!: number;
 	public model_House2!: number;
 	public model_House3!: number;
+	
+	public model_RoadSegment!: number;
+	public model_RoadJoin!: number;
 	public model_Intersection1!: number;
+
 
 	loadModels(gltf: GLTF, batch: BatchedMesh) {
 		this.model_Missing = batch.addGeometry(new THREE.BoxGeometry(0.5, 0.5, 0.5));
@@ -31,7 +36,10 @@ class RenderAssets {
 		this.model_House1 = addGeom(this, 'house_001');
 		this.model_House2 = addGeom(this, 'house_002');
 		this.model_House3 = addGeom(this, 'house_003');
+
 		this.model_Intersection1 = addGeom(this, 'road_001');
+		this.model_RoadSegment = addGeom(this, 'road_segment');
+		this.model_RoadJoin = addGeom(this, 'road_join');
 
 		function addGeom(self: RenderAssets, name: string) {
 			let geom = gltf.scene.getGeometryByName(name);
@@ -181,7 +189,8 @@ export class GameRenderer {
 					const tile = game.grid.getTile(x + 1, y + 1);
 					const tileInst = this.drawBatch.addInstance(this.assets.model_TileBG);
 
-					tile.draw = new TileDraw(x, y, tileInst);
+					const rng = this.game.rng.slice(y * this.gridSize * 13 + x * 7);
+					tile.draw = new TileDraw(x, y, tileInst, rng);
 					position.copy(tile.draw.pos);
 					position.z = -0.01;
 					matrix.makeTranslation(position);
@@ -195,11 +204,14 @@ export class GameRenderer {
 
 		// Hover Model
 		{
+			console.log("setup hover");
 			this.hoverMesh = this.addModel(
-				this.assets.model_House1,
+				this.assets.model_Hover,
 				new float3(0, 0, 0),
 				1,
-				new color3(Colors.white));
+				new color3(Colors.bad))
+				.setName('hover tile');
+			this.hoverMesh.setVisible(false);
 		}
 
 		this.scene.add(this.drawBatch);
@@ -208,14 +220,14 @@ export class GameRenderer {
 	public hoverTile(tile: Tile | null) {
 		if (!this.hoverMesh)
 			return;
-		
+
 		if (!tile?.draw) {
 			this.hoverMesh.setVisible(false);
 			return;
 		}
-		
+
 		const pos = tile.draw.pos;
-		this.hoverMesh.setPosition(pos.x, pos.y, pos.z);
+		this.hoverMesh.setPosition(pos.x, pos.y, 0);
 		this.hoverMesh.setVisible(true);
 	}
 
@@ -253,6 +265,55 @@ export class GameRenderer {
 		return new P2(x, y);
 	}
 
+	public addFloatingDebugText(message, position, color, duration = 1000) {
+		// 1. Create an HTML5 Canvas and draw the text
+		const canvas = document.createElement('canvas');
+		canvas.width = 256;
+		canvas.height = 128;
+		const ctx = canvas.getContext('2d')!;
+
+		ctx.fillStyle = color;
+		ctx.font = 'bold 32px Arial';
+		ctx.textAlign = 'center';
+		ctx.textBaseline = 'middle';
+		ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+
+		// 2. Create a CanvasTexture and a Sprite (automatically faces the camera)
+		const texture = new THREE.CanvasTexture(canvas);
+		const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+		const sprite = new THREE.Sprite(material);
+
+		sprite.position.copy(position);
+		sprite.position.setZ(1);
+		sprite.scale.set(1, 0.5, 1); // Adjust world size
+		this.scene.add(sprite);
+
+		// 3. Animate upward until cleanup
+		const startTime = performance.now();
+		const startY = position.y;
+		const floatDistance = 0.1; // How far up it floats
+		const scene = this.scene;
+
+		function animate() {
+			const elapsed = performance.now() - startTime;
+			const progress = Math.min(elapsed / duration, 1);
+
+			// Move up and fade
+			sprite.position.y = startY + (floatDistance * progress);
+			material.opacity = 1 - progress;
+
+			if (progress < 1) {
+				requestAnimationFrame(animate);
+			} else {
+				// Cleanup
+				scene.remove(sprite);
+				material.dispose();
+				texture.dispose();
+			}
+		}
+		animate();
+	}
+
 	public addModel(
 		modelID: number,
 		pos: float3,
@@ -260,24 +321,33 @@ export class GameRenderer {
 		color: color3) {
 		const inst = this.drawBatch.addInstance(modelID);
 		const rotation = new quat4();
-		const scale = new float3(size);
-		const matrix = new mat4x4().compose(
-			pos, rotation, scale
-		);
+		const scale = new float3(size, size, size);
+		const matrix = new mat4x4()
+			.compose(pos, rotation, scale);
+		return this.addModel_Mat(modelID, pos, rotation, scale, matrix, color);
+	}
+
+	public addModel_Mat(
+		modelID: number,
+		pos: float3,
+		rotation: quat4,
+		scale: float3,
+		matrix: mat4x4,
+		color: color3) {
+		const inst = this.drawBatch.addInstance(modelID);
 		this.drawBatch.setMatrixAt(inst, matrix);
 		this.drawBatch.setColorAt(inst, color);
-
 		return new BatchedInstance(this.drawBatch, inst, pos, rotation, scale);
 	}
 
 	public addMeshToTile(
-		tile: Tile,
 		modelID: number,
-		pos: P2,
+		tile: Tile,
+		pos: float3,
 		color: color3,
 	) {
-		const position = new float3(pos.x, pos.y, 0);
-		const scale = 1;
+		const position = pos;
+		const scale = 0;
 		const model = this.addModel(modelID,
 			position,
 			scale,
@@ -285,6 +355,52 @@ export class GameRenderer {
 
 		tile.draw?.models.push(model);
 		return model;
+	}
+
+	public growMeshOnTile(
+		modelID: number,
+		tile: Tile,
+		color: color3,
+		pos: float3,
+		size: number,
+	): [model: BatchedInstance, anim: GameAnim];
+	public growMeshOnTile(
+		modelID: number,
+		tile: Tile,
+		color: color3,
+		pos: float3,
+		scale: float3,
+		rot: quat4,
+	): [model: BatchedInstance, anim: GameAnim];
+	public growMeshOnTile(
+		modelID: number,
+		tile: Tile,
+		color: color3,
+		pos: float3,
+		scale: number | float3,
+		rot?: quat4,
+	): [model: BatchedInstance, anim: GameAnim] {
+		// Create initial model
+		const model = this.addModel(modelID,
+			new float3(tile.pos.x, tile.pos.y, 0),
+			0,
+			color);
+		tile.draw?.models.push(model);
+
+		// Animate to target transform
+		let anim: GameAnim;
+		if (rot !== undefined) {
+			// Extract target transform
+			anim = Anims.growModelTRS(
+				model, pos, rot, scale as float3, Anims.BaseDur
+			);
+		}
+		else {
+			anim = Anims.growModelTowards(
+				model, pos, scale as number, Anims.BaseDur
+			);
+		}
+		return [model, anim];
 	}
 }
 
@@ -301,6 +417,12 @@ export class BatchedInstance {
 		public scale = new float3(1, 1, 1)) {
 	}
 
+	public name: string | undefined;
+	setName(name: string): BatchedInstance {
+		this.name = name;
+		return this;
+	}
+
 	setMatrix(matrix: mat4x4) {
 		this.batch.setMatrixAt(this.instId, matrix);
 		return this;
@@ -310,18 +432,30 @@ export class BatchedInstance {
 	setPosition(x: number, y: number, z: number);
 	setPosition(x: number, y: number, z?: number) {
 		this.position.set(x, y, z ?? 0);
-		BatchedInstance._matrix.compose(this.position, this.rotation, this.scale);
-		this.batch.setMatrixAt(this.instId, BatchedInstance._matrix);
-		return this;
+		return this.updateMatrix();
+	}
+
+	setRotation(rotRad: number) {
+		this.rotation.setFromAxisAngle(new float3(0, 0, 1), rotRad);
+		return this.updateMatrix();
 	}
 
 	setScale(x: number);
 	setScale(x: number, y: number, z: number);
 	setScale(x: number, y?: number, z?: number) {
 		this.scale.set(x, y ?? x, z ?? x);
-		BatchedInstance._matrix.compose(this.position, this.rotation, this.scale);
-		this.batch.setMatrixAt(this.instId, BatchedInstance._matrix);
-		return this;
+		return this.updateMatrix();
+	}
+
+	setTRS(
+		pos: float3,
+		rotRad: number,
+		scale: float3
+	) {
+		this.position.copy(pos);
+		this.rotation.setFromAxisAngle(new float3(0, 0, 1), rotRad);
+		this.scale.copy(scale);
+		return this.updateMatrix();
 	}
 
 	updateMatrix() {
@@ -349,3 +483,4 @@ export class BatchedInstance {
 		this.instId = -1;
 	}
 }
+

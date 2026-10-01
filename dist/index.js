@@ -59,39 +59,6 @@ class Frame {
   }
 }
 
-// src/styles/colors.ts
-var Colors = {
-  white: 16711422,
-  black: 2105376,
-  good: 5744699,
-  bad: 10369317,
-  bgDark: 855050,
-  bgPanel: 1381912,
-  textHeader: 12698063,
-  textHighlight: 14734032,
-  textAccent: 12957364,
-  textDefault: 10924996,
-  textMuted: 7835046,
-  shadow: 128,
-  border: 7835046,
-  bgBtn: 1381912,
-  bgBtnHover: 2895151,
-  tileLight: 2567739,
-  tileDark: 1909291,
-  tileBorder: 1910833,
-  tileHighlight: 1910833,
-  tileHighlight2: 2116677,
-  tileHouse1: 7547163,
-  tileHouse2: 10369317,
-  tileHouse3: 13584945,
-  tileRoad1: 1381683,
-  tileRoad2: 2237010,
-  tileBridge: 1583184,
-  tileWater: 1722993,
-  tileGrass: 2843176,
-  tileTree1: 4232253
-};
-
 // node_modules/three/build/three.core.js
 var REVISION = "186";
 var CullFaceNone = 0;
@@ -7620,6 +7587,153 @@ class Material extends EventDispatcher {
       this.version++;
   }
 }
+
+class SpriteMaterial extends Material {
+  constructor(parameters) {
+    super();
+    this.isSpriteMaterial = true;
+    this.type = "SpriteMaterial";
+    this.color = new Color(16777215);
+    this.map = null;
+    this.alphaMap = null;
+    this.rotation = 0;
+    this.sizeAttenuation = true;
+    this.transparent = true;
+    this.fog = true;
+    this.setValues(parameters);
+  }
+  copy(source) {
+    super.copy(source);
+    this.color.copy(source.color);
+    this.map = source.map;
+    this.alphaMap = source.alphaMap;
+    this.rotation = source.rotation;
+    this.sizeAttenuation = source.sizeAttenuation;
+    this.fog = source.fog;
+    return this;
+  }
+}
+var _geometry;
+var _intersectPoint = /* @__PURE__ */ new Vector3;
+var _worldScale = /* @__PURE__ */ new Vector3;
+var _mvPosition = /* @__PURE__ */ new Vector3;
+var _alignedPosition = /* @__PURE__ */ new Vector2;
+var _rotatedPosition = /* @__PURE__ */ new Vector2;
+var _viewWorldMatrix = /* @__PURE__ */ new Matrix4;
+var _vA$1 = /* @__PURE__ */ new Vector3;
+var _vB$1 = /* @__PURE__ */ new Vector3;
+var _vC$1 = /* @__PURE__ */ new Vector3;
+var _uvA = /* @__PURE__ */ new Vector2;
+var _uvB = /* @__PURE__ */ new Vector2;
+var _uvC = /* @__PURE__ */ new Vector2;
+
+class Sprite extends Object3D {
+  constructor(material = new SpriteMaterial) {
+    super();
+    this.isSprite = true;
+    this.type = "Sprite";
+    if (_geometry === undefined) {
+      _geometry = new BufferGeometry;
+      const float32Array = new Float32Array([
+        -0.5,
+        -0.5,
+        0,
+        0,
+        0,
+        0.5,
+        -0.5,
+        0,
+        1,
+        0,
+        0.5,
+        0.5,
+        0,
+        1,
+        1,
+        -0.5,
+        0.5,
+        0,
+        0,
+        1
+      ]);
+      const interleavedBuffer = new InterleavedBuffer(float32Array, 5);
+      _geometry.setIndex([0, 1, 2, 0, 2, 3]);
+      _geometry.setAttribute("position", new InterleavedBufferAttribute(interleavedBuffer, 3, 0, false));
+      _geometry.setAttribute("uv", new InterleavedBufferAttribute(interleavedBuffer, 2, 3, false));
+    }
+    this.geometry = _geometry;
+    this.material = material;
+    this.center = new Vector2(0.5, 0.5);
+    this.count = 1;
+  }
+  intersectsFrustum(frustum) {
+    return frustum.intersectsSprite(this);
+  }
+  raycast(raycaster, intersects) {
+    if (raycaster.camera === null) {
+      error('Sprite: "Raycaster.camera" needs to be set in order to raycast against sprites.');
+    }
+    _worldScale.setFromMatrixScale(this.matrixWorld);
+    _viewWorldMatrix.copy(raycaster.camera.matrixWorld);
+    this.modelViewMatrix.multiplyMatrices(raycaster.camera.matrixWorldInverse, this.matrixWorld);
+    _mvPosition.setFromMatrixPosition(this.modelViewMatrix);
+    if (raycaster.camera.isPerspectiveCamera && this.material.sizeAttenuation === false) {
+      _worldScale.multiplyScalar(-_mvPosition.z);
+    }
+    const rotation = this.material.rotation;
+    let sin, cos;
+    if (rotation !== 0) {
+      cos = Math.cos(rotation);
+      sin = Math.sin(rotation);
+    }
+    const center = this.center;
+    transformVertex(_vA$1.set(-0.5, -0.5, 0), _mvPosition, center, _worldScale, sin, cos);
+    transformVertex(_vB$1.set(0.5, -0.5, 0), _mvPosition, center, _worldScale, sin, cos);
+    transformVertex(_vC$1.set(0.5, 0.5, 0), _mvPosition, center, _worldScale, sin, cos);
+    _uvA.set(0, 0);
+    _uvB.set(1, 0);
+    _uvC.set(1, 1);
+    let intersect = raycaster.ray.intersectTriangle(_vA$1, _vB$1, _vC$1, false, _intersectPoint);
+    if (intersect === null) {
+      transformVertex(_vB$1.set(-0.5, 0.5, 0), _mvPosition, center, _worldScale, sin, cos);
+      _uvB.set(0, 1);
+      intersect = raycaster.ray.intersectTriangle(_vA$1, _vC$1, _vB$1, false, _intersectPoint);
+      if (intersect === null) {
+        return;
+      }
+    }
+    const distance = raycaster.ray.origin.distanceTo(_intersectPoint);
+    if (distance < raycaster.near || distance > raycaster.far)
+      return;
+    intersects.push({
+      distance,
+      point: _intersectPoint.clone(),
+      uv: Triangle.getInterpolation(_intersectPoint, _vA$1, _vB$1, _vC$1, _uvA, _uvB, _uvC, new Vector2),
+      face: null,
+      object: this
+    });
+  }
+  copy(source, recursive) {
+    super.copy(source, recursive);
+    if (source.center !== undefined)
+      this.center.copy(source.center);
+    this.material = source.material;
+    return this;
+  }
+}
+function transformVertex(vertexPosition, mvPosition, center, scale, sin, cos) {
+  _alignedPosition.subVectors(vertexPosition, center).addScalar(0.5).multiply(scale);
+  if (sin !== undefined) {
+    _rotatedPosition.x = cos * _alignedPosition.x - sin * _alignedPosition.y;
+    _rotatedPosition.y = sin * _alignedPosition.x + cos * _alignedPosition.y;
+  } else {
+    _rotatedPosition.copy(_alignedPosition);
+  }
+  vertexPosition.copy(mvPosition);
+  vertexPosition.x += _rotatedPosition.x;
+  vertexPosition.y += _rotatedPosition.y;
+  vertexPosition.applyMatrix4(_viewWorldMatrix);
+}
 var _vector$7 = /* @__PURE__ */ new Vector3;
 var _segCenter = /* @__PURE__ */ new Vector3;
 var _segDir = /* @__PURE__ */ new Vector3;
@@ -10017,6 +10131,14 @@ class CubeTexture extends Texture {
   }
   set images(value) {
     this.image = value;
+  }
+}
+
+class CanvasTexture extends Texture {
+  constructor(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy) {
+    super(canvas, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+    this.isCanvasTexture = true;
+    this.needsUpdate = true;
   }
 }
 class DepthTexture extends Texture {
@@ -28723,9 +28845,12 @@ class WebGLRenderer {
 
 // src/utils/threeUtils.ts
 var color3 = Color;
+var float2 = Vector2;
 var float3 = Vector3;
+var float4 = Vector4;
 var mat4x4 = Matrix4;
 var quat4 = Quaternion;
+var ZAxis = new float3(0, 0, 1);
 Object3D.prototype.getGeometryByName = function(name) {
   const target = this.getObjectByName(name);
   if (!target)
@@ -28783,8 +28908,11 @@ var Anims;
   Anims.BaseDur = 1;
   function combined(anims) {
     let duration = 0;
-    for (const anim of anims)
+    for (const anim of anims) {
+      if (!anim)
+        continue;
       duration = Math.max(anim.delay + anim.duration);
+    }
     return new GameAnim(function(dt) {
       for (let i = 0;i < anims.length; ++i) {
         const anim = anims[i];
@@ -28798,14 +28926,45 @@ var Anims;
     }, duration);
   }
   Anims.combined = combined;
-  function createModel(model, targetSize, duration) {
+  function growModel(model, targetSize, duration) {
     const initialSize = 0;
     return new GameAnim(function() {
       const [t, s] = this.lil();
       model.setScale(lerp(initialSize, targetSize, t));
     }, duration);
   }
-  Anims.createModel = createModel;
+  Anims.growModel = growModel;
+  function growModelTowards(model, targetPos, targetSize, duration) {
+    const initPos = model.position.clone();
+    const initScale = model.scale.clone();
+    const targetScale = new float3(targetSize, targetSize, targetSize);
+    return new GameAnim(function() {
+      const [t, s] = this.lil();
+      const l = t;
+      model.position.copy(initPos);
+      model.position.lerp(targetPos, l);
+      model.scale.copy(initScale);
+      model.scale.lerp(targetScale, l);
+      model.updateMatrix();
+    }, duration);
+  }
+  Anims.growModelTowards = growModelTowards;
+  function growModelTRS(model, targetPos, targetRot, targetScale, duration) {
+    const initPos = model.position.clone();
+    const initRot = model.rotation.clone();
+    const initScale = model.scale.clone();
+    return new GameAnim(function() {
+      const [t, s] = this.lil();
+      const l = t;
+      model.position.copy(initPos);
+      model.position.lerp(targetPos, l);
+      model.rotation.copy(targetRot);
+      model.scale.copy(initScale);
+      model.scale.lerp(targetScale, l);
+      model.updateMatrix();
+    }, duration);
+  }
+  Anims.growModelTRS = growModelTRS;
   function destroyModel(model, duration) {
     const initialSize = model.scale.x;
     return new GameAnim(function() {
@@ -28842,24 +29001,127 @@ var Anims;
   Anims.mergeModel = mergeModel;
 })(Anims ||= {});
 
+// src/styles/colors.ts
+var Colors = {
+  white: 16711422,
+  black: 2105376,
+  good: 5744699,
+  bad: 10369317,
+  bgDark: 855050,
+  bgPanel: 1381912,
+  textHeader: 12698063,
+  textHighlight: 14734032,
+  textAccent: 12957364,
+  textDefault: 10924996,
+  textMuted: 7835046,
+  shadow: 128,
+  border: 7835046,
+  bgBtn: 1381912,
+  bgBtnHover: 2895151,
+  tileLight: 2567739,
+  tileDark: 1909291,
+  tileBorder: 1910833,
+  tileHighlight: 1910833,
+  tileHighlight2: 2116677,
+  tileHouse1: 7547163,
+  tileHouse2: 10369317,
+  tileHouse3: 13584945,
+  tileRoad1: 4675183,
+  tileRoad2: 4675183,
+  tileBridge: 4675183,
+  tileWater: 1722993,
+  tileGrass: 2843176,
+  tileTree1: 4232253
+};
+
+// src/game/Rule.ts
+function isTile(pattern, type) {
+  return pattern === Tiles.Any || pattern === type;
+}
+
+class Match3x3 {
+  ul = Tiles.Any;
+  uc = Tiles.Any;
+  ur = Tiles.Any;
+  cl = Tiles.Any;
+  cc = Tiles.Empty;
+  cr = Tiles.Any;
+  dl = Tiles.Any;
+  dc = Tiles.Any;
+  dr = Tiles.Any;
+  constructor(init) {
+    Object.assign(this, init);
+  }
+  isMatch(area) {
+    return isTile(this.uc, area.uc.type) && isTile(this.cr, area.cr.type) && isTile(this.dc, area.dc.type) && isTile(this.cl, area.cl.type) && isTile(this.ul, area.ul.type) && isTile(this.ur, area.ur.type) && isTile(this.dr, area.dr.type) && isTile(this.dl, area.dl.type);
+  }
+}
+
+class Area3x3 {
+  ul;
+  uc;
+  ur;
+  cl;
+  cc;
+  cr;
+  dl;
+  dc;
+  dr;
+  constructor(ul, uc, ur, cl, cc, cr, dl, dc, dr) {
+    this.ul = ul;
+    this.uc = uc;
+    this.ur = ur;
+    this.cl = cl;
+    this.cc = cc;
+    this.cr = cr;
+    this.dl = dl;
+    this.dc = dc;
+    this.dr = dr;
+  }
+  static create(tiles) {
+    return new Area3x3(...tiles);
+  }
+}
+class Rule {
+  name;
+  match;
+  matchFlags;
+  apply;
+  constructor(name, match, apply, matchFlags) {
+    this.name = name;
+    this.match = new Match3x3(match);
+    this.matchFlags = matchFlags ?? 1 /* Rotate1 */;
+    this.apply = apply;
+  }
+}
+
 // src/game/Tile.ts
-class Tile {
+class Tile2 {
   pos;
   type;
-  shouldCheck = false;
   draw = null;
+  shouldRegen = false;
+  shouldCheck = false;
   constructor(pos, type) {
     this.pos = pos;
     this.type = type;
+  }
+  getCenterPos() {
+    if (this.draw && (this.type.centerOffset ?? 0 > 0))
+      return this.draw.getCenterPos(this.type.centerOffset);
+    return new float3(this.pos.x, this.pos.y, 0);
   }
 }
 
 class TileDraw {
   pos;
   baseColor;
+  rng;
   models = [];
   visualIndex = -1;
-  constructor(x, y, gridIndex) {
+  drawCache = {};
+  constructor(x, y, gridIndex, rng) {
+    this.rng = rng;
     this.pos = new float3(x + 1, y + 1, 0);
     this.baseColor = this.getBaseColor();
     this.visualIndex = gridIndex;
@@ -28867,6 +29129,11 @@ class TileDraw {
   getBaseColor() {
     const isDark = (this.pos.x + this.pos.y % 2) % 2 == 0;
     return new color3(isDark ? Colors.tileDark : Colors.tileLight);
+  }
+  getCenterPos(offset) {
+    const centerX = this.pos.x + this.rng.nextF(-offset, offset);
+    const centerY = this.pos.y + this.rng.nextF(-offset, offset);
+    return new float3(centerX, centerY, 0);
   }
   destroyAllModels(duration) {
     let anims = [];
@@ -28882,6 +29149,240 @@ class TileDraw {
     this.models.length = 0;
     return Anims.combined(anims);
   }
+}
+var Tiles = {
+  Any: { name: "any" },
+  Empty: {
+    name: "empty",
+    animCreate(game, tile) {
+      if (!tile.draw)
+        return;
+      return tile.draw.destroyAllModels(Anims.BaseDur);
+    }
+  },
+  House1: {
+    name: "house1",
+    color: Colors.tileHouse1,
+    animCreate(game, tile) {
+      if (!tile.draw)
+        return;
+      tile.draw.rng.reset();
+      const pos = tile.getCenterPos();
+      const model = game.renderer.addMeshToTile(game.assets.model_House1, tile, pos, new color3(this.color));
+      return Anims.growModel(model, 1, 1);
+    }
+  },
+  House2: {
+    name: "house2",
+    color: Colors.tileHouse2,
+    animCreate(game, tile) {
+      if (!tile.draw)
+        return;
+      tile.draw.rng.reset();
+      const pos = tile.getCenterPos();
+      const model = game.renderer.addMeshToTile(game.assets.model_House2, tile, pos, new color3(this.color));
+      return Anims.growModel(model, 1, 1);
+    }
+  },
+  House3: {
+    name: "house3",
+    color: Colors.tileHouse3,
+    animCreate(game, tile) {
+      if (!tile.draw)
+        return;
+      tile.draw.rng.reset();
+      const pos = tile.getCenterPos();
+      const model = game.renderer.addMeshToTile(game.assets.model_House3, tile, pos, new color3(this.color));
+      return Anims.growModel(model, 1, 1);
+    }
+  },
+  Road: {
+    name: "road1",
+    color: Colors.tileRoad1,
+    animCreate(game, tile) {
+      return this.animRegen(game, tile);
+    },
+    animRegen(game, tile) {
+      if (!tile.draw)
+        return;
+      const rng = tile.draw.rng;
+      rng.reset();
+      let anims = [];
+      if (tile.draw.models.length > 0) {
+        anims.push(tile.draw.destroyAllModels(0.01).delayed(Anims.BaseDur * 0.5));
+      }
+      const centerPos = tile.getCenterPos();
+      const size = rng.nextF(0.8, 1);
+      const [model, anim] = game.renderer.growMeshOnTile(game.assets.model_RoadJoin, tile, new color3(this.color), centerPos, size);
+      model.setName(`${tile.pos.name()}_${tile.type.name}`);
+      anims.push(anim);
+      const lc = connectTo.call(this, -1, 0);
+      const cd = connectTo.call(this, 0, -1);
+      const cu = connectTo.call(this, 0, 1);
+      const rc = connectTo.call(this, 1, 0);
+      if (!(lc || cu))
+        connectTo.call(this, -1, 1);
+      if (!(lc || cd))
+        connectTo.call(this, -1, -1);
+      if (!(rc || cu))
+        connectTo.call(this, 1, 1);
+      if (!(rc || cd))
+        connectTo.call(this, 1, -1);
+      function connectTo(x, y) {
+        const otherTile = game.grid.getTileOffset(tile.pos, x, y);
+        const shouldConnect = shouldConnectToRoad(otherTile.type);
+        if (shouldConnect) {
+          const targetTile = otherTile;
+          targetTile.draw?.rng.reset();
+          const targetPos = targetTile.getCenterPos();
+          const [_, anim2] = growPath(game, tile, centerPos, targetPos, new color3(this.color));
+          anims.push(anim2);
+          return true;
+        }
+        return false;
+      }
+      return Anims.combined(anims);
+    }
+  },
+  Intersection: {
+    name: "road2",
+    color: Colors.tileRoad2,
+    animCreate(game, tile) {
+      return this.animRegen(game, tile);
+    },
+    animRegen(game, tile) {
+      if (!tile.draw)
+        return;
+      const rng = tile.draw.rng;
+      rng.reset();
+      let anims = [];
+      if (tile.draw.models.length > 0) {
+        anims.push(tile.draw.destroyAllModels(0.01).delayed(Anims.BaseDur * 0.5));
+      }
+      const centerPos = tile.getCenterPos();
+      const size = rng.nextF(0.8, 1);
+      const [model, anim] = game.renderer.growMeshOnTile(game.assets.model_Intersection1, tile, new color3(this.color), centerPos, size);
+      model.setName(`${tile.pos.name()}_${tile.type.name}`);
+      anims.push(anim);
+      const lc = connectTo.call(this, -1, 0);
+      const cd = connectTo.call(this, 0, -1);
+      const cu = connectTo.call(this, 0, 1);
+      const rc = connectTo.call(this, 1, 0);
+      if (!(lc || cu))
+        connectTo.call(this, -1, 1);
+      if (!(lc || cd))
+        connectTo.call(this, -1, -1);
+      if (!(rc || cu))
+        connectTo.call(this, 1, 1);
+      if (!(rc || cd))
+        connectTo.call(this, 1, -1);
+      function connectTo(x, y) {
+        const otherTile = game.grid.getTileOffset(tile.pos, x, y);
+        const shouldConnect = shouldConnectToRoad(otherTile.type);
+        if (shouldConnect) {
+          const targetTile = otherTile;
+          targetTile.draw?.rng.reset();
+          const targetPos = targetTile.getCenterPos();
+          const [_, anim2] = growPath(game, tile, centerPos, targetPos, new color3(this.color));
+          anims.push(anim2);
+          return true;
+        }
+        return false;
+      }
+      return Anims.combined(anims);
+    }
+  },
+  Bridge: { name: "bridge", color: Colors.tileBridge },
+  Grass: { name: "grass", color: Colors.tileGrass },
+  Tree: { name: "tree", color: Colors.tileTree1 },
+  Water: { name: "water", color: Colors.tileWater }
+};
+function makeRules() {
+  let rules = [];
+  rules.push(new Rule("Make Building", {
+    cc: Tiles.House2,
+    uc: Tiles.House1,
+    dc: Tiles.House1,
+    cl: Tiles.House1,
+    cr: Tiles.House1
+  }, (game, area) => {
+    game.mergeTilesInto(area.cc, [area.uc, area.dc, area.cl, area.cr], Tiles.House3);
+    game.addScore(area.cc, 4);
+    game.addPop(area.cc, 4);
+  }, 0 /* None */));
+  rules.push(new Rule("Make Cull-de-sac", {
+    cc: Tiles.Road,
+    uc: Tiles.House1,
+    cl: Tiles.House1,
+    dc: Tiles.House1
+  }, (game, area) => {
+    game.mergeTilesInto(area.cc, [area.uc, area.dc, area.cl], Tiles.House2);
+    game.addScore(area.cc, 3);
+  }, 3 /* Rotate4 */));
+  rules.push(new Rule("Add Road between Houses", {
+    cc: Tiles.Empty,
+    uc: Tiles.House1,
+    dc: Tiles.House1
+  }, (game, area) => {
+    game.replaceTile(area.cc, Tiles.Road);
+    game.addScore(area.cc, 1);
+  }, 1 /* Rotate1 */));
+  rules.push(new Rule("Make Intersection", {
+    cc: Tiles.Empty,
+    uc: Tiles.Road,
+    dc: Tiles.Road,
+    cl: Tiles.Road
+  }, (game, area) => {
+    game.replaceTile(area.cc, Tiles.Intersection);
+    game.addScore(area.cc, 4);
+  }, 3 /* Rotate4 */));
+  rules.push(new Rule("Upgrade Intersection", {
+    cc: Tiles.Road,
+    uc: Tiles.Road,
+    dc: Tiles.Road,
+    cl: Tiles.Road
+  }, (game, area) => {
+    game.replaceTile(area.cc, Tiles.Intersection);
+    game.addScore(area.cc, 4);
+  }, 3 /* Rotate4 */));
+  rules.push(new Rule("Make Tree", {
+    cc: Tiles.Grass,
+    uc: Tiles.Grass,
+    ul: Tiles.Grass,
+    cl: Tiles.Grass
+  }, (game, area) => {
+    game.replaceTile(area.cc, Tiles.Tree);
+    game.replaceTile(area.uc, Tiles.Empty);
+    game.replaceTile(area.ul, Tiles.Empty);
+    game.replaceTile(area.cl, Tiles.Empty);
+    game.addScore(area.cc, 4);
+    game.addNat(area.cc, 2);
+  }, 0 /* None */));
+  rules.push(new Rule("Make Pond", {
+    cc: Tiles.Empty,
+    uc: Tiles.Grass,
+    ul: Tiles.Grass,
+    cl: Tiles.Grass,
+    cr: Tiles.Grass
+  }, (game, area) => {
+    game.replaceTile(area.cc, Tiles.Water);
+    game.replaceTile(area.uc, Tiles.Empty);
+    game.replaceTile(area.ul, Tiles.Empty);
+    game.replaceTile(area.cl, Tiles.Empty);
+    game.replaceTile(area.cr, Tiles.Empty);
+    game.addScore(area.cc, 2);
+  }, 0 /* None */));
+  return rules;
+}
+function shouldConnectToRoad(type) {
+  return type == Tiles.Road || type == Tiles.Intersection;
+}
+function growPath(game, tile, start, end, color) {
+  const dir = new float3().subVectors(end, start);
+  const dirLen = dir.length();
+  const dirNorm = dir.clone().divideScalar(dirLen);
+  const dirAngle = Math.atan2(dirNorm.y, dirNorm.x) - Math.PI / 2;
+  return game.renderer.growMeshOnTile(game.assets.model_RoadSegment, tile, new color3(color), start, new float3(1, dirLen * 0.6, 1), new quat4().setFromAxisAngle(ZAxis, dirAngle));
 }
 
 // node_modules/three/examples/jsm/utils/BufferGeometryUtils.js
@@ -31414,6 +31915,8 @@ class RenderAssets {
   model_House1;
   model_House2;
   model_House3;
+  model_RoadSegment;
+  model_RoadJoin;
   model_Intersection1;
   loadModels(gltf, batch) {
     this.model_Missing = batch.addGeometry(new BoxGeometry(0.5, 0.5, 0.5));
@@ -31423,6 +31926,8 @@ class RenderAssets {
     this.model_House2 = addGeom(this, "house_002");
     this.model_House3 = addGeom(this, "house_003");
     this.model_Intersection1 = addGeom(this, "road_001");
+    this.model_RoadSegment = addGeom(this, "road_segment");
+    this.model_RoadJoin = addGeom(this, "road_join");
     function addGeom(self2, name) {
       let geom = gltf.scene.getGeometryByName(name);
       if (!geom)
@@ -31528,7 +32033,8 @@ class GameRenderer {
         for (let x = 0;x < this.gridSize; ++x) {
           const tile = game.grid.getTile(x + 1, y + 1);
           const tileInst = this.drawBatch.addInstance(this.assets.model_TileBG);
-          tile.draw = new TileDraw(x, y, tileInst);
+          const rng = this.game.rng.slice(y * this.gridSize * 13 + x * 7);
+          tile.draw = new TileDraw(x, y, tileInst, rng);
           position.copy(tile.draw.pos);
           position.z = -0.01;
           matrix.makeTranslation(position);
@@ -31538,7 +32044,9 @@ class GameRenderer {
       }
     }
     {
-      this.hoverMesh = this.addModel(this.assets.model_House1, new float3(0, 0, 0), 1, new color3(Colors.white));
+      console.log("setup hover");
+      this.hoverMesh = this.addModel(this.assets.model_Hover, new float3(0, 0, 0), 1, new color3(Colors.bad)).setName("hover tile");
+      this.hoverMesh.setVisible(false);
     }
     this.scene.add(this.drawBatch);
   }
@@ -31550,7 +32058,7 @@ class GameRenderer {
       return;
     }
     const pos = tile.draw.pos;
-    this.hoverMesh.setPosition(pos.x, pos.y, pos.z);
+    this.hoverMesh.setPosition(pos.x, pos.y, 0);
     this.hoverMesh.setVisible(true);
   }
   draw(frame) {
@@ -31572,21 +32080,72 @@ class GameRenderer {
     const y = p0.y + t * d0.y;
     return new P2(x, y);
   }
+  addFloatingDebugText(message, position, color, duration = 1000) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = color;
+    ctx.font = "bold 32px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    const texture = new CanvasTexture(canvas);
+    const material = new SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new Sprite(material);
+    sprite.position.copy(position);
+    sprite.position.setZ(1);
+    sprite.scale.set(1, 0.5, 1);
+    this.scene.add(sprite);
+    const startTime = performance.now();
+    const startY = position.y;
+    const floatDistance = 0.1;
+    const scene = this.scene;
+    function animate() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      sprite.position.y = startY + floatDistance * progress;
+      material.opacity = 1 - progress;
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        scene.remove(sprite);
+        material.dispose();
+        texture.dispose();
+      }
+    }
+    animate();
+  }
   addModel(modelID, pos, size, color) {
     const inst = this.drawBatch.addInstance(modelID);
     const rotation = new quat4;
-    const scale = new float3(size);
+    const scale = new float3(size, size, size);
     const matrix = new mat4x4().compose(pos, rotation, scale);
+    return this.addModel_Mat(modelID, pos, rotation, scale, matrix, color);
+  }
+  addModel_Mat(modelID, pos, rotation, scale, matrix, color) {
+    const inst = this.drawBatch.addInstance(modelID);
     this.drawBatch.setMatrixAt(inst, matrix);
     this.drawBatch.setColorAt(inst, color);
     return new BatchedInstance(this.drawBatch, inst, pos, rotation, scale);
   }
-  addMeshToTile(tile, modelID, pos, color) {
-    const position = new float3(pos.x, pos.y, 0);
-    const scale = 1;
+  addMeshToTile(modelID, tile, pos, color) {
+    const position = pos;
+    const scale = 0;
     const model = this.addModel(modelID, position, scale, color);
     tile.draw?.models.push(model);
     return model;
+  }
+  growMeshOnTile(modelID, tile, color, pos, scale, rot) {
+    const model = this.addModel(modelID, new float3(tile.pos.x, tile.pos.y, 0), 0, color);
+    tile.draw?.models.push(model);
+    let anim;
+    if (rot !== undefined) {
+      anim = Anims.growModelTRS(model, pos, rot, scale, Anims.BaseDur);
+    } else {
+      anim = Anims.growModelTowards(model, pos, scale, Anims.BaseDur);
+    }
+    return [model, anim];
   }
 }
 
@@ -31606,21 +32165,32 @@ class BatchedInstance {
     this.rotation = rotation;
     this.scale = scale;
   }
+  name;
+  setName(name) {
+    this.name = name;
+    return this;
+  }
   setMatrix(matrix) {
     this.batch.setMatrixAt(this.instId, matrix);
     return this;
   }
   setPosition(x, y, z) {
     this.position.set(x, y, z ?? 0);
-    BatchedInstance._matrix.compose(this.position, this.rotation, this.scale);
-    this.batch.setMatrixAt(this.instId, BatchedInstance._matrix);
-    return this;
+    return this.updateMatrix();
+  }
+  setRotation(rotRad) {
+    this.rotation.setFromAxisAngle(new float3(0, 0, 1), rotRad);
+    return this.updateMatrix();
   }
   setScale(x, y, z) {
     this.scale.set(x, y ?? x, z ?? x);
-    BatchedInstance._matrix.compose(this.position, this.rotation, this.scale);
-    this.batch.setMatrixAt(this.instId, BatchedInstance._matrix);
-    return this;
+    return this.updateMatrix();
+  }
+  setTRS(pos, rotRad, scale) {
+    this.position.copy(pos);
+    this.rotation.setFromAxisAngle(new float3(0, 0, 1), rotRad);
+    this.scale.copy(scale);
+    return this.updateMatrix();
   }
   updateMatrix() {
     BatchedInstance._matrix.compose(this.position, this.rotation, this.scale);
@@ -31644,143 +32214,95 @@ class BatchedInstance {
   }
 }
 
+// src/game/SeededRandom.ts
+class RandomSlice {
+  values;
+  _start = 0;
+  _index = 0;
+  _step = 1;
+  constructor(seed, length) {
+    let rand = mulberry32(seed);
+    this.values = Array(length);
+    for (let i = 0;i < length; ++i)
+      this.values[i] = rand();
+    function mulberry32(a) {
+      return function() {
+        let t = a += 1831565813;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+  }
+  reset() {
+    this._index = this._start;
+  }
+  next01() {
+    let value = this.values[this._index];
+    this._index += this._step;
+    if (this._index >= this.values.length)
+      this._index %= this.values.length;
+    return value;
+  }
+  nextF(min = 0, max = 1) {
+    return min + (max - min) * this.next01();
+  }
+  nextP2() {
+    return new P2(this.next01(), this.next01());
+  }
+  nextF2() {
+    return new float2(this.next01(), this.next01());
+  }
+  nextF3() {
+    return new float3(this.next01(), this.next01(), this.next01());
+  }
+  nextF4() {
+    return new float4(this.next01(), this.next01(), this.next01(), this.next01());
+  }
+  slice(next, step) {
+    const obj = Object.create(RandomSlice.prototype);
+    obj.values = this.values;
+    obj._start = next % this.values.length;
+    obj._index = obj._start;
+    obj._step = step ?? next;
+    if (obj._step == 0)
+      obj._step = 1;
+    return obj;
+  }
+}
+
 // src/game/GameState.ts
 class GameState {
   score = 0;
   population = 0;
   nature = 0;
   grid = new Grid;
-  rules = GameState.makeRules();
+  rules = makeRules();
   items = [];
   anims = [];
+  rng = new RandomSlice(Math.random(), 1024);
   isCreative = true;
   renderer = new GameRenderer;
-  canPlaceTile(tile, type) {
-    if (!this.isCreative && !this.hasItem(type))
-      return false;
-    if (tile.type !== Tiles.Empty)
-      return false;
-    return true;
-  }
-  placeTile(tile, type) {
-    if (!this.canPlaceTile(tile, type)) {
-      return;
-    }
-    this.consumeItem(type);
-    switch (type) {
-      case Tiles.House1:
-        this.createTile(tile, type);
-        this.addScore(tile, 1);
-        this.addPop(tile, 1);
-        break;
-      case Tiles.Grass:
-        this.createTile(tile, type);
-        this.addScore(tile, 1);
-        this.addNat(tile, 1);
-        break;
-      case Tiles.Road:
-        this.createTile(tile, type);
-        this.addScore(tile, 1);
-        break;
-      default:
-        console.warn(`Not Implemented: Placing tile ${type.name} on ${tile.pos.name()}`);
-        return;
-    }
-    this.applyRules();
-  }
-  static makeRules() {
-    let rules = [];
-    rules.push(new Rule("Make Building", {
-      cc: Tiles.House2,
-      tc: Tiles.House1,
-      bc: Tiles.House1,
-      cl: Tiles.House1,
-      cr: Tiles.House1
-    }, (game, area) => {
-      game.mergeTilesInto(area.cc, [area.tc, area.bc, area.cl, area.cr], Tiles.House3);
-      game.addScore(area.cc, 4);
-      game.addPop(area.cc, 4);
-    }, 0 /* None */));
-    rules.push(new Rule("Make Cull-de-sac", {
-      cc: Tiles.Road,
-      tc: Tiles.House1,
-      cl: Tiles.House1,
-      bc: Tiles.House1
-    }, (game, area) => {
-      game.mergeTilesInto(area.cc, [area.tc, area.bc, area.cl], Tiles.House2);
-      game.addScore(area.cc, 3);
-    }, 3 /* Rotate4 */));
-    rules.push(new Rule("Add Road between Houses", {
-      cc: Tiles.Empty,
-      tc: Tiles.House1,
-      bc: Tiles.House1
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Road);
-      game.addScore(area.cc, 1);
-    }, 1 /* Rotate1 */));
-    rules.push(new Rule("Make Intersection T", {
-      cc: Tiles.Empty,
-      tc: Tiles.Road,
-      bc: Tiles.Road,
-      cl: Tiles.Road
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Intersection);
-      game.addScore(area.cc, 4);
-    }, 3 /* Rotate4 */));
-    rules.push(new Rule("Make Intersection", {
-      cc: Tiles.Empty,
-      tc: Tiles.Road,
-      bc: Tiles.Road,
-      cl: Tiles.Road,
-      cr: Tiles.Road
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Intersection);
-      game.addScore(area.cc, 4);
-    }, 0 /* None */));
-    rules.push(new Rule("Upgrade Intersection", {
-      cc: Tiles.Road,
-      tc: Tiles.Road,
-      bc: Tiles.Road,
-      cl: Tiles.Road,
-      cr: Tiles.Road
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Intersection);
-      game.addScore(area.cc, 4);
-    }, 0 /* None */));
-    rules.push(new Rule("Make Tree", {
-      cc: Tiles.Grass,
-      tc: Tiles.Grass,
-      tl: Tiles.Grass,
-      cl: Tiles.Grass
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Tree);
-      game.createTile(area.tc, Tiles.Empty);
-      game.createTile(area.tl, Tiles.Empty);
-      game.createTile(area.cl, Tiles.Empty);
-      game.addScore(area.cc, 4);
-      game.addNat(area.cc, 2);
-    }, 0 /* None */));
-    rules.push(new Rule("Make Pond", {
-      cc: Tiles.Empty,
-      tc: Tiles.Grass,
-      tl: Tiles.Grass,
-      cl: Tiles.Grass,
-      cr: Tiles.Grass
-    }, (game, area) => {
-      game.createTile(area.cc, Tiles.Water);
-      game.createTile(area.tc, Tiles.Empty);
-      game.createTile(area.tl, Tiles.Empty);
-      game.createTile(area.cl, Tiles.Empty);
-      game.createTile(area.cr, Tiles.Empty);
-      game.addScore(area.cc, 2);
-    }, 0 /* None */));
-    return rules;
+  get assets() {
+    return this.renderer.assets;
   }
   addAnim(anim) {
     if (!anim)
       return;
     this.anims.push(anim);
     return anim;
+  }
+  regenVisuals() {
+    for (const tile of this.grid.tiles) {
+      if (!tile.shouldRegen)
+        continue;
+      tile.shouldRegen = false;
+      if (!tile.draw || !tile.type.animRegen)
+        continue;
+      const anim = tile.type.animRegen(this, tile);
+      if (anim)
+        this.anims.push(anim);
+    }
   }
   addScore(tile, s) {
     this.score += s;
@@ -31799,10 +32321,20 @@ class GameState {
     this.markForCheck(tile.pos.x, tile.pos.y);
     this.markAdjForCheck(tile.pos);
   }
-  createTile(tile, type) {
+  replaceTile(tile, type) {
+    if (type == Tiles.Empty || tile.type == Tiles.Empty) {
+      this.setTileType(tile, type);
+      if (tile.type.animCreate)
+        this.addAnim(tile.type.animCreate(this, tile));
+      return;
+    }
     this.setTileType(tile, type);
-    if (tile.type.animCreate)
-      this.addAnim(tile.type.animCreate(this, tile));
+    if (tile.type.animCreate) {
+      this.addAnim(Anims.combined([
+        Tiles.Empty.animCreate(this, tile),
+        tile.type.animCreate(this, tile)
+      ]));
+    }
   }
   mergeTilesInto(targetTile, tiles, type) {
     for (const tile of tiles)
@@ -31853,6 +32385,22 @@ class GameState {
       return;
     }
   }
+  canPlaceTile(tile, type) {
+    if (!this.isCreative && !this.hasItem(type))
+      return false;
+    if (tile.type !== Tiles.Empty)
+      return false;
+    return true;
+  }
+  placeTile(tile, type) {
+    if (!this.canPlaceTile(tile, type)) {
+      return;
+    }
+    this.consumeItem(type);
+    this.replaceTile(tile, type);
+    this.applyRules();
+    this.regenVisuals();
+  }
   tilesToCheck = 0;
   markForCheck(x, y) {
     if (x <= 0 || x >= this.grid.size - 1 || y <= 0 || y >= this.grid.size - 1)
@@ -31860,6 +32408,7 @@ class GameState {
     const tile = this.grid.getTile(x, y);
     if (!tile.shouldCheck) {
       tile.shouldCheck = true;
+      tile.shouldRegen = true;
       this.tilesToCheck++;
     }
   }
@@ -31879,11 +32428,16 @@ class GameState {
     tile.shouldCheck = false;
     this.tilesToCheck--;
   }
+  get hasUnappliedRules() {
+    return this.tilesToCheck > 0;
+  }
   applyRules() {
-    while (this.tilesToCheck > 0)
+    while (this.hasUnappliedRules)
       this.applyRulesOnce();
   }
   applyRulesOnce() {
+    if (!this.hasUnappliedRules)
+      return;
     let ruleIndex = Number.MAX_SAFE_INTEGER;
     let ruleToApply = null;
     let areaToApply = null;
@@ -31907,11 +32461,12 @@ class GameState {
       for (const [index, rule] of this.rules.entries()) {
         if (index >= ruleIndex) {
           examinedAllRules = false;
-          continue;
+          break;
         }
         if (!isTile(rule.match.cc, cc.type))
           continue;
         if (rule.match.isMatch(rot000)) {
+          examinedAllRules = false;
           ruleToApply = rule;
           areaToApply = rot000;
           ruleIndex = index;
@@ -31919,6 +32474,7 @@ class GameState {
         }
         if (rule.matchFlags & 1 /* Rotate1 */) {
           if (rule.match.isMatch(rot090)) {
+            examinedAllRules = false;
             ruleToApply = rule;
             areaToApply = rot090;
             ruleIndex = index;
@@ -31927,12 +32483,14 @@ class GameState {
         }
         if (rule.matchFlags & 3 /* Rotate4 */) {
           if (rule.match.isMatch(rot180)) {
+            examinedAllRules = false;
             ruleToApply = rule;
             areaToApply = rot180;
             ruleIndex = index;
             break;
           }
           if (rule.match.isMatch(rot270)) {
+            examinedAllRules = false;
             ruleToApply = rule;
             areaToApply = rot270;
             ruleIndex = index;
@@ -31949,79 +32507,6 @@ class GameState {
     }
   }
 }
-var Tiles = {
-  Any: { name: "any" },
-  Empty: {
-    name: "empty",
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      return tile.draw.destroyAllModels(Anims.BaseDur);
-    }
-  },
-  House1: {
-    name: "house1",
-    color: Colors.tileHouse1,
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      const pos = tile.pos;
-      const model = game.renderer.addMeshToTile(tile, game.renderer.assets.model_House1, pos, new color3(this.color));
-      return Anims.createModel(model, 1, 1);
-    }
-  },
-  House2: {
-    name: "house2",
-    color: Colors.tileHouse2,
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      const pos = tile.pos;
-      const model = game.renderer.addMeshToTile(tile, game.renderer.assets.model_House2, pos, new color3(this.color));
-      return Anims.createModel(model, 1, 1);
-    }
-  },
-  House3: {
-    name: "house3",
-    color: Colors.tileHouse3,
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      const pos = tile.pos;
-      const model = game.renderer.addMeshToTile(tile, game.renderer.assets.model_House3, pos, new color3(this.color));
-      return Anims.createModel(model, 1, 1);
-    }
-  },
-  Road: {
-    name: "road1",
-    color: Colors.tileRoad1,
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      const pos = tile.pos;
-      const model = game.renderer.addMeshToTile(tile, game.renderer.assets.model_Intersection1, pos, new color3(this.color));
-      return Anims.createModel(model, 1, 1);
-    }
-  },
-  Intersection: {
-    name: "road2",
-    color: Colors.tileRoad2,
-    animCreate(game, tile) {
-      if (!tile.draw)
-        return;
-      const pos = tile.pos;
-      const model = game.renderer.addMeshToTile(tile, game.renderer.assets.model_Intersection1, pos, new color3(this.color));
-      return Anims.createModel(model, 1, 1);
-    }
-  },
-  Bridge: { name: "bridge", color: Colors.tileBridge },
-  Grass: { name: "grass", color: Colors.tileGrass },
-  Tree: { name: "tree", color: Colors.tileTree1 },
-  Water: { name: "water", color: Colors.tileWater }
-};
-function isTile(pattern, type) {
-  return pattern === Tiles.Any || pattern === type;
-}
 
 class Item {
   type;
@@ -32035,85 +32520,35 @@ class Item {
 class Grid {
   size = 10;
   tiles;
+  _emptyTile = new Tile2(new P2(-1, -1), Tiles.Empty);
   constructor() {
     this.tiles = Array(this.size * this.size);
     for (let y = 0;y < this.size; ++y) {
       for (let x = 0;x < this.size; ++x) {
-        this.tiles[y * this.size + x] = new Tile(new P2(x, y), Tiles.Empty);
+        this.tiles[y * this.size + x] = new Tile2(new P2(x, y), Tiles.Empty);
       }
     }
   }
+  getTileOffset(pos, x, y) {
+    return this.getTile(pos.x + x, pos.y + y);
+  }
   getTile(xOrPos, y) {
-    if (typeof xOrPos === "object") {
-      return this.tiles[xOrPos.y * this.size + xOrPos.x];
-    }
-    return this.tiles[y * this.size + xOrPos];
+    if (typeof xOrPos === "object")
+      return this.getTileInternal(xOrPos.x, xOrPos.y);
+    return this.getTileInternal(xOrPos, y);
+  }
+  getTileInternal(x, y) {
+    if (x < 0 || x >= this.size || y < 0 || y >= this.size)
+      return this._emptyTile;
+    return this.tiles[y * this.size + x];
   }
   getTileType(xOrPos, y) {
-    const x = typeof xOrPos === "object" ? xOrPos.x : xOrPos;
-    const py = typeof xOrPos === "object" ? xOrPos.y : y;
-    if (x < 0 || x >= this.size || py < 0 || py >= this.size)
-      return Tiles.Empty;
-    return this.tiles[py * this.size + x].type;
+    if (typeof xOrPos === "object")
+      return this.getTileInternal(xOrPos.x, xOrPos.y).type;
+    return this.getTileInternal(xOrPos, y).type;
   }
   isTileEmpty(pos) {
     return this.getTileType(pos) === Tiles.Empty;
-  }
-}
-
-class Match3x3 {
-  tl = Tiles.Any;
-  tc = Tiles.Any;
-  tr = Tiles.Any;
-  cl = Tiles.Any;
-  cc = Tiles.Empty;
-  cr = Tiles.Any;
-  bl = Tiles.Any;
-  bc = Tiles.Any;
-  br = Tiles.Any;
-  constructor(init) {
-    Object.assign(this, init);
-  }
-  isMatch(area) {
-    return isTile(this.tc, area.tc.type) && isTile(this.cr, area.cr.type) && isTile(this.bc, area.bc.type) && isTile(this.cl, area.cl.type) && isTile(this.tl, area.tl.type) && isTile(this.tr, area.tr.type) && isTile(this.br, area.br.type) && isTile(this.bl, area.bl.type);
-  }
-}
-
-class Area3x3 {
-  tl;
-  tc;
-  tr;
-  cl;
-  cc;
-  cr;
-  bl;
-  bc;
-  br;
-  constructor(tl, tc, tr, cl, cc, cr, bl, bc, br) {
-    this.tl = tl;
-    this.tc = tc;
-    this.tr = tr;
-    this.cl = cl;
-    this.cc = cc;
-    this.cr = cr;
-    this.bl = bl;
-    this.bc = bc;
-    this.br = br;
-  }
-  static create(tiles) {
-    return new Area3x3(...tiles);
-  }
-}
-class Rule {
-  name;
-  match;
-  matchFlags;
-  apply;
-  constructor(name, match, apply, matchFlags) {
-    this.name = name;
-    this.match = new Match3x3(match);
-    this.matchFlags = matchFlags ?? 1 /* Rotate1 */;
-    this.apply = apply;
   }
 }
 
@@ -32169,6 +32604,7 @@ class GameView {
     window.addEventListener("pointerdown", this.handlePointerDown);
     window.addEventListener("pointerup", this.handlePointerUp);
     window.addEventListener("pointercancel", this.handlePointerCancel);
+    window.addEventListener("keydown", this.handleKeyPress);
     this.loop(0);
   }
   exit(ctx) {}
@@ -32188,7 +32624,7 @@ class GameView {
       return;
     }
     this.game.placeTile(tile, Tiles.House1);
-    this.updateVisuals();
+    this.playNextAnim();
   }
   dragTile(start, end) {}
   hoverPos = null;
@@ -32203,14 +32639,10 @@ class GameView {
   }
   _applyingAnims = false;
   _fastApplyAnims = false;
-  updateVisuals() {
-    this.updateScore();
+  speedUpAnims() {
     if (this._applyingAnims) {
       this._fastApplyAnims = true;
-      return;
     }
-    this._applyingAnims = true;
-    this.applyNextAnim();
   }
   anims = [];
   updateAnims(deltaTime) {
@@ -32222,14 +32654,15 @@ class GameView {
       anim.update(deltaTime);
     this.anims = this.anims.filter((anim) => !anim.isDone());
     if (this.anims.length < 1)
-      this.applyNextAnim();
+      this.playNextAnim();
   }
-  applyNextAnim() {
+  playNextAnim() {
     if (this.game.anims.length < 1) {
       this._applyingAnims = false;
       this._fastApplyAnims = false;
       return;
     }
+    this._applyingAnims = true;
     const anim = this.game.anims.shift();
     this.anims.push(anim);
   }
@@ -32240,6 +32673,32 @@ class GameView {
   worldPos = null;
   gridPos = null;
   startPressedTile = null;
+  stateDebugAnim;
+  handleKeyPress = (e) => {
+    switch (e.code) {
+      case "Comma":
+        if (this.stateDebugAnim) {
+          cancelAnimationFrame(this.stateDebugAnim);
+          this.stateDebugAnim = undefined;
+        } else {
+          const debugFrame = () => {
+            for (const tile of this.game.grid.tiles) {
+              const centerPos = tile.getCenterPos();
+              if (tile.shouldCheck)
+                this.game.renderer.addFloatingDebugText("*", centerPos.setX(centerPos.x + 0.1), "#086820");
+              if (tile.shouldRegen)
+                this.game.renderer.addFloatingDebugText("*", centerPos.setX(centerPos.x + 0.1), "#88a01f");
+            }
+            if (this.stateDebugAnim)
+              this.stateDebugAnim = requestAnimationFrame(debugFrame);
+          };
+          this.stateDebugAnim = requestAnimationFrame(debugFrame);
+        }
+        break;
+      default:
+        break;
+    }
+  };
   handlePointerMove = (e) => {
     this.uiPos = new P2(e.clientX, e.clientY);
     this.worldPos = this.renderer.uiToWorld(this.uiPos);
@@ -32280,7 +32739,7 @@ class GameView {
 }
 
 // src/index.ts
-var BuildTimestamp = "v20260929_221745";
+var BuildTimestamp = "v20261001_154537";
 var BuildID = "brioche";
 document.addEventListener("DOMContentLoaded", () => {
   const root = document.getElementById("content-root");
@@ -32288,4 +32747,4 @@ document.addEventListener("DOMContentLoaded", () => {
   ctx.changeView(new GameView(ctx));
 });
 
-//# debugId=F5410FFB3D33F1B664756E2164756E21
+//# debugId=6C7F168692F9AE3C64756E2164756E21

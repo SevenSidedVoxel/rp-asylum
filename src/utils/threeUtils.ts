@@ -16,6 +16,8 @@ export type mat4x4 = THREE.Matrix4;
 export const quat4 = THREE.Quaternion;
 export type quat4 = THREE.Quaternion;
 
+export const ZAxis = new float3(0, 0, 1);
+
 declare module 'three' {
 	interface Object3D {
 		getGeometryByName(name: string): THREE.BufferGeometry | undefined;

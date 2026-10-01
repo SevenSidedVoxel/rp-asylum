@@ -26,9 +26,9 @@
 	"tileHouse1": "#73291b",
 	"tileHouse2": "#9e3925",
 	"tileHouse3": "#cf4a31",
-	"tileRoad1": "#151533",
-	"tileRoad2": "#222252",
-	"tileBridge": "#182850",
+	"tileRoad1": "#47566f",
+	"tileRoad2": "#47566f",
+	"tileBridge": "#47566f",
 	"tileWater": "#1a4a71",
 	"tileGrass": "#2b6228",
 	"tileTree1": "#40943d"
